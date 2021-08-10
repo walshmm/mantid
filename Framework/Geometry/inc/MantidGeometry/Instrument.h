@@ -153,6 +153,11 @@ public:
   /// Retrieves from which side the instrument to be viewed from when the
   /// instrument viewer first starts, possibilities are "Z+, Z-, X+, ..."
   void setDefaultViewAxis(const std::string &axis) { m_defaultViewAxis = axis; }
+  /// Retrieves value that determines if an instrument should be viewed in
+  /// a fixed aspect ratio
+  bool isFixedAspectRatio() { return this.m_fixedAspectRatio; }
+  /// Set if an instrument should be viewed in a fixed aspect ratio
+  void setFixedAspectRatio(bool fixedAspectRatio) { this.m_fixedAspectRatio = fixedAspectRatio; }
   // Allow access by index
   using CompAssembly::getChild;
 
@@ -264,6 +269,8 @@ private:
   /// Stores from which side the instrument will be viewed from, initially in
   /// the instrument viewer, possibilities are "Z+, Z-, X+, ..."
   std::string m_defaultViewAxis;
+  // Stores whether or not the instrument will be viewed in a fixed aspect ratio
+  bool m_fixedAspectRatio = false;
 
   /// Pointer to the "real" instrument, for parametrized Instrument
   std::shared_ptr<const Instrument> m_instr;

@@ -16,6 +16,7 @@
       <pointing-up axis="y"/>
       <handedness val="right"/>
     </reference-frame>
+    <default-view  axis-view="z-" fixed-aspect="true" />
   </defaults>
   
 <!--SOURCE AND SAMPLE POSITION-->

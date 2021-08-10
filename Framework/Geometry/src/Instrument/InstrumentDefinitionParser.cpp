@@ -972,6 +972,10 @@ void InstrumentDefinitionParser::readDefaults(Poco::XML::Element *defaults) {
     if (defaultView->hasAttribute("view")) {
       m_instrument->setDefaultView(defaultView->getAttribute("view"));
     }
+    if (defaultView->hasAttribute("fixed-aspect")) {
+      std::string fixedAspect = defaultView->getAttribute("fixed-aspect");
+      m_instrument->setFixedAspectRatio("1" == fixedAspect || "true" == std::tolower(fixedAspect));
+    }
   }
 
   // check if angle=radian has been set

@@ -113,6 +113,7 @@ private: // members
   QFrame *m_resetViewFrame;
   QComboBox *mAxisCombo;
   QCheckBox *m_flipCheckBox;
+  QCheckBox *m_aspectRatioCheckBox;
   QPushButton *m_peakOverlaysButton;
   QCheckBox *m_autoscaling;
   QCheckBox *m_freezeRotation;
@@ -143,6 +144,7 @@ private: // members
   QLabel *m_layerDisplay;
 
   bool m_usingLayerStore;
+  bool m_fixedAspectRatioDefault = false;
 
   friend class InstrumentWidget;
   friend class InstrumentWidgetEncoder;

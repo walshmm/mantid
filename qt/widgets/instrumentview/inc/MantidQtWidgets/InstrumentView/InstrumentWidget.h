@@ -152,6 +152,7 @@ public:
   QString getInstrumentSettingsGroupName() const;
 
   bool hasWorkspace(const std::string &wsName) const;
+  bool isFixedAspectRatio();
   void handleWorkspaceReplacement(
       const std::string &wsName,
       const std::shared_ptr<Mantid::API::Workspace> &workspace);
@@ -356,6 +357,9 @@ private:
   bool m_wsReplace;
   QPushButton *m_help;
   QVBoxLayout *m_mainLayout;
+
+  //stores default for render tab
+  bool m_fixedAspectRatio = false;
 };
 
 } // namespace MantidWidgets

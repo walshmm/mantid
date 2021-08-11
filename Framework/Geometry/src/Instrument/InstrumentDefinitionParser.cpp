@@ -4,6 +4,7 @@
 //   NScD Oak Ridge National Laboratory, European Spallation Source,
 //   Institut Laue - Langevin & CSNS, Institute of High Energy Physics, CAS
 // SPDX - License - Identifier: GPL - 3.0 +
+#include <boost/algorithm/string.hpp>
 #include <fstream>
 #include <sstream>
 
@@ -974,7 +975,7 @@ void InstrumentDefinitionParser::readDefaults(Poco::XML::Element *defaults) {
     }
     if (defaultView->hasAttribute("fixed-aspect")) {
       std::string fixedAspect = defaultView->getAttribute("fixed-aspect");
-      m_instrument->setFixedAspectRatio("1" == fixedAspect || "true" == std::tolower(fixedAspect));
+      m_instrument->setFixedAspectRatio("1" == fixedAspect || "true" == boost::to_lower_copy(fixedAspect));
     }
   }
 

@@ -65,6 +65,11 @@ public:
   const IDetector *getBaseDetector(const detid_t &detector_id) const;
   bool isMonitor(const detid_t &detector_id) const;
   bool isMonitor(const std::set<detid_t> &detector_ids) const;
+  /// Retrieves value that determines if an instrument should be viewed in
+  /// a fixed aspect ratio
+  bool isFixedAspectRatio() const;
+  /// Set if an instrument should be viewed in a fixed aspect ratio
+  void setFixedAspectRatio(bool fixedAspectRatio);
 
   /// Returns a pointer to the geometrical object for the given set of IDs
   IDetector_const_sptr getDetectorG(const std::set<detid_t> &det_ids) const;
@@ -153,11 +158,6 @@ public:
   /// Retrieves from which side the instrument to be viewed from when the
   /// instrument viewer first starts, possibilities are "Z+, Z-, X+, ..."
   void setDefaultViewAxis(const std::string &axis) { m_defaultViewAxis = axis; }
-  /// Retrieves value that determines if an instrument should be viewed in
-  /// a fixed aspect ratio
-  bool isFixedAspectRatio() { return this.m_fixedAspectRatio; }
-  /// Set if an instrument should be viewed in a fixed aspect ratio
-  void setFixedAspectRatio(bool fixedAspectRatio) { this.m_fixedAspectRatio = fixedAspectRatio; }
   // Allow access by index
   using CompAssembly::getChild;
 

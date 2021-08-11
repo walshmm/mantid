@@ -158,6 +158,9 @@ InstrumentWidget::InstrumentWidget(const QString &wsName, QWidget *parent,
   m_instrumentActor.reset(
       new InstrumentActor(m_workspaceName, autoscaling, scaleMin, scaleMax));
 
+  Instrument_const_sptr instr = m_instrumentActor->getInstrument(); 
+  m_fixedAspectRatio = instr->isFixedAspectRatio() == true;
+
   m_xIntegration = new XIntegrationControl(this);
   m_mainLayout->addWidget(m_xIntegration);
   connect(m_xIntegration, SIGNAL(changed(double, double)), this,
@@ -1662,6 +1665,10 @@ void InstrumentWidget::loadTabs(const std::string &lines) const {
   for (auto tab : m_tabs) {
     tab->loadFromProject(lines);
   }
+}
+
+bool InstrumentWidget::isFixedAspectRatio() {
+  return m_fixedAspectRatio;
 }
 
 /**

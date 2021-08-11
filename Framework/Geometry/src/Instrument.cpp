@@ -1279,6 +1279,12 @@ Instrument::makeWrappers(ParameterMap &pmap, const ComponentInfo &componentInfo,
   return {std::move(compInfo), std::move(detInfo)};
 }
 
+/// Retrieves value that determines if an instrument should be viewed in
+/// a fixed aspect ratio
+bool Instrument::isFixedAspectRatio() const { return m_fixedAspectRatio; }
+/// Set if an instrument should be viewed in a fixed aspect ratio
+void Instrument::setFixedAspectRatio(bool fixedAspectRatio) { m_fixedAspectRatio = fixedAspectRatio; }
+
 namespace Conversion {
 
 /**

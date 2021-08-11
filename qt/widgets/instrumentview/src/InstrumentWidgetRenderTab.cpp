@@ -53,6 +53,8 @@ InstrumentWidgetRenderTab::InstrumentWidgetRenderTab(
 
   setupSurfaceTypeOptions();
 
+  m_fixedAspectRatioDefault = instrWindow->isFixedAspectRatio();
+
   // Reset view button
   m_resetView = new QPushButton(tr("Reset View"));
   m_resetView->setToolTip("Reset the instrument view to default");
@@ -263,12 +265,21 @@ void InstrumentWidgetRenderTab::setupUnwrappedControls(
   connect(m_flipCheckBox, SIGNAL(toggled(bool)), this,
           SLOT(flipUnwrappedView(bool)));
 
+  m_aspectRatioCheckBox = new QCheckBox("Fixed Aspect Ratio", this);
+  m_aspectRatioCheckBox->setToolTip("Restrict instrument view to fixed aspect ratio");
+  m_aspectRatioCheckBox->setChecked(m_fixedAspectRatioDefault);
+  m_aspectRatioCheckBox->hide();
+  //connect(m_flipCheckBox, SIGNAL(toggled(bool)), this,
+  //        SLOT(flipUnwrappedView(bool)));
+
+
   m_peakOverlaysButton = new QPushButton("Peaks options", this);
   m_peakOverlaysButton->setToolTip("Set peak overlay options");
   m_peakOverlaysButton->hide();
   m_peakOverlaysButton->setMenu(createPeaksMenu());
 
   parentLayout->addWidget(m_flipCheckBox);
+  parentLayout->addWidget(m_aspectRatioCheckBox);
   parentLayout->addWidget(m_peakOverlaysButton);
 }
 
@@ -562,8 +573,10 @@ void InstrumentWidgetRenderTab::setLegendScaleType(int index) {
  */
 void InstrumentWidgetRenderTab::showOrHideBoxes(int iv) {
   bool isFull3D = iv == 0;
+  bool isSphericalOrCylindrical = iv >=1 && iv <= 6;
   m_resetViewFrame->setVisible(isFull3D);
   m_flipCheckBox->setVisible(!isFull3D);
+  m_aspectRatioCheckBox->setVisible(isSphericalOrCylindrical);
   m_peakOverlaysButton->setVisible(!isFull3D);
 
   if (isFull3D)
@@ -885,6 +898,7 @@ MantidQt::MantidWidgets::InstrumentWidgetRenderTab::saveToProject() const {
   tab.writeLine("AutoScaling") << m_autoscaling->isChecked();
   tab.writeLine("DisplayAxes") << m_displayAxes->isChecked();
   tab.writeLine("FlipView") << m_flipCheckBox->isChecked();
+  tab.writeLine("FixedAspectRatio") << m_aspectRatioCheckBox->isChecked();
   tab.writeLine("DisplayDetectorsOnly") << m_displayDetectorsOnly->isChecked();
   tab.writeLine("DisplayWireframe") << m_wireframe->isChecked();
   tab.writeLine("DisplayLighting") << m_lighting->isChecked();
@@ -925,7 +939,7 @@ void InstrumentWidgetRenderTab::loadFromProject(const std::string &lines) {
   tsv >> tabLines;
   API::TSVSerialiser tab(tabLines);
 
-  bool autoScaling, displayAxes, flipView, displayDetectorsOnly,
+  bool autoScaling, displayAxes, flipView, fixedAspectRatio, displayDetectorsOnly,
       displayWireframe, displayLighting, useOpenGL, useUCorrection;
   int axesView;
 
@@ -937,6 +951,8 @@ void InstrumentWidgetRenderTab::loadFromProject(const std::string &lines) {
   tab >> displayAxes;
   tab.selectLine("FlipView");
   tab >> flipView;
+  tab.selectLine("FixedAspectRatio");
+  tab >> fixedAspectRatio;
   tab.selectLine("DisplayDetectorsOnly");
   tab >> displayDetectorsOnly;
   tab.selectLine("DisplayWireframe");
@@ -952,6 +968,7 @@ void InstrumentWidgetRenderTab::loadFromProject(const std::string &lines) {
   m_autoscaling->setChecked(autoScaling);
   m_displayAxes->setChecked(displayAxes);
   m_flipCheckBox->setChecked(flipView);
+  m_aspectRatioCheckBox->setChecked(fixedAspectRatio);
   m_displayDetectorsOnly->setChecked(displayDetectorsOnly);
   m_wireframe->setChecked(displayWireframe);
   m_lighting->setChecked(displayLighting);

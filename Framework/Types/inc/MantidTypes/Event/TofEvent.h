@@ -20,13 +20,18 @@ class LoadEventNexus;
 }
 namespace Types {
 namespace Event {
+
+class MANTID_TYPES_DLL Event {
+
+}
+
 /** Info about a single neutron detection event:
  *
  *  - the time of flight of the neutron (can be converted to other units)
  *  - the absolute time of the pulse at which it was produced
  */
 #pragma pack(push, 4) // Ensure the structure is no larger than it needs to
-class MANTID_TYPES_DLL TofEvent {
+class MANTID_TYPES_DLL TofEvent : public Event {
 
   /// EventList has the right to mess with TofEvent.
   friend class DataObjects::EventList;

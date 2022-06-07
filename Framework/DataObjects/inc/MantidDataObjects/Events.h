@@ -78,6 +78,47 @@ public:
 };
 #pragma pack(pop)
 
+#pragma pack(push, 4) // Ensure the structure is no larger than it needs to
+class DLLExport TofEventNoTime : public Types::Event::Event {
+  /// EventList has the right to mess with this
+  friend class EventList;
+  friend class tofGreaterOrEqual;
+  friend class tofGreater;
+
+  protected:
+  /// The 'x value' (e.g. time-of-flight) of this neutron
+  double m_tof;
+
+  public:
+  /// Constructor, specifying only the time of flight
+  TofEventNoTime(double time_of_flight);
+
+  TofEventNoTime();
+
+  bool operator==(const TofEventNoTime &rhs) const;
+
+  /** < comparison operator, using the TOF to do the comparison.
+   * @param rhs: the other WeightedEventNoTime to compare.
+   * @return true if this->m_tof < rhs.m_tof
+   */
+  bool operator<(const TofEventNoTime &rhs) const { return (this->m_tof < rhs.m_tof); }
+
+  /** < comparison operator, using the TOF to do the comparison.
+   * @param rhs_tof: the other time of flight to compare.
+   * @return true if this->m_tof < rhs.m_tof
+   */
+  bool operator<(const double rhs_tof) const { return (this->m_tof < rhs_tof); }
+
+  bool equals(const TofEventNoTime &rhs, const double tolTof) const;
+
+  double operator()() const;
+  double tof() const;
+
+  /// Output a string representation of the event to a stream
+  friend std::ostream &operator<<(std::ostream &os, const WeightedEvent &event);
+}
+#pragma pack(pop)
+
 //==========================================================================================
 /** Info about a single neutron detection event, including a weight and error
  *value,
@@ -88,7 +129,7 @@ public:
  *  - weight of the neutron (float, can be
  */
 #pragma pack(push, 4) // Ensure the structure is no larger than it needs to
-class DLLExport WeightedEventNoTime {
+class DLLExport WeightedEventNoTime : public Types::Event::Event {
 
   /// EventList has the right to mess with this
   friend class EventList;

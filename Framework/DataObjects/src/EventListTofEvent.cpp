@@ -44,4 +44,25 @@ void EventListTofEvent::sortTimeAtSample(const double &tofFactor, const double &
     this->order = TIMEATSAMPLE_SORT;    
 }
 
+size_t EventListTofEvent::getMemorySize() const {
+    return this->events.capacity() * sizeof(TofEvent) + sizeof(EventListTofEvent);
+}
+
+void EventListTofEvent::generateHistogramTimeAtSample(const MantidVec &X, MantidVec &Y, MantidVec &E, const double &tofFactor,
+                                              const double &tofOffset, bool skipError) {
+// All types of weights need to be sorted by time at sample
+    this->sortTimeAtSample(tofFactor, tofOffset);
+    // Make the single ones
+    this->generateCountsHistogramTimeAtSample(X, Y, tofFactor, tofOffset);
+    if (!skipError)
+      this->generateErrorsHistogram(Y, E);
+}
+
+void EventListTofEvent::generateHistogramPulseTime(const MantidVec &X, MantidVec &Y, MantidVec &E, bool skipError) const {
+    this->sortPulseTime();
+    this->generateCountsHistogramPulseTime(X, Y);
+    if (!skipError)
+      this->generateErrorsHistogram(Y, E);
+}
+
 }

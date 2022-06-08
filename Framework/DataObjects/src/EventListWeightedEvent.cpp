@@ -44,4 +44,35 @@ void EventListWeightedEvent::sortTimeAtSample(const double &tofFactor, const dou
     this->order = TIMEATSAMPLE_SORT;    
 }
 
+size_t EventListWeightedEvent::getMemorySize() const {
+    return this->events.capacity() * sizeof(WeightedEvent) + sizeof(EventListWeightedEvent);
+}
+
+void EventListWeightedEvent::generateHistogramTimeAtSample(const MantidVec &X, MantidVec &Y, MantidVec &E, const double &tofFactor,
+                                              const double &tofOffset, bool skipError) {
+    throw std::runtime_error("Cannot histogram by time at sample on Weighted "
+                             "Events currently"); // This could be supported.
+}
+
+void EventListWeightedEvent::generateHistogramPulseTime(const MantidVec &X, MantidVec &Y, MantidVec &E, bool skipError) const {
+    throw std::runtime_error("Cannot histogram by pulse time on Weighted "
+                             "Events currently"); // This could be supported.
+}
+
+void EventListWeightedEvent::generateHistogram(const MantidVec &X, MantidVec &Y, MantidVec &E, bool skipError) const {
+    this->sortTof();
+    histogramForWeightsHelper(this->events, X, Y, E);
+}
+
+void EventListWeightedEvent::getWeights(std::vector<double> &weights) const {
+    weights.reserve(this->getNumberEvents());
+    this->getWeightsHelper(this->events, weights);
+}
+
+void EventListWeightedEvent::getWeightErrors(std::vector<double> &weightErrors) const {
+    // Set the capacity of the vector to avoid multiple resizes
+    weightErrors.reserve(this->getNumberEvents());
+    this->getWeightErrorsHelper(this->events, weightErrors);
+}
+
 }

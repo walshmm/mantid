@@ -307,7 +307,12 @@ std::vector<TofEvent> &EventList::getEvents() {
   return this->eventList.getEvents();
 }
 
-std::vector<Types::Event::Event> &EventList::getEventsTyped() {
+std::vector<Event> &EventList::getEventsTyped() {
+  //TODO probably throw, else possible inf loop?;
+  return this->eventList.getEventsTyped();
+}
+
+const std::vector<Event> &EventList::getEventsTyped() const {
   return this->eventList.getEventsTyped();
 }
 

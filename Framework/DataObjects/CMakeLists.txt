@@ -8,6 +8,11 @@ set(SRC_FILES
     src/CoordTransformDistance.cpp
     src/CoordTransformDistanceParser.cpp
     src/EventList.cpp
+    src/EventListBase.cpp
+    src/EventListTofEvent.cpp
+    src/EventListTofEventNoTime.cpp
+    src/EventListWeightedEvent.cpp
+    src/EventListWeightedEventNoTime.cpp
     src/EventWorkspace.cpp
     src/EventWorkspaceHelpers.cpp
     src/EventWorkspaceMRU.cpp
@@ -71,6 +76,12 @@ set(INC_FILES
     inc/MantidDataObjects/CoordTransformDistanceParser.h
     inc/MantidDataObjects/DllConfig.h
     inc/MantidDataObjects/EventList.h
+    inc/MantidDataObjects/EventListBase.h
+    inc/MantidDataObjects/EventListTemplate.h
+    inc/MantidDataObjects/EventListTofEvent.h
+    inc/MantidDataObjects/EventListTofEventNoTime.h
+    inc/MantidDataObjects/EventListWeightedEvent.h
+    inc/MantidDataObjects/EventListWeightedEventNoTime.h
     inc/MantidDataObjects/EventWorkspace.h
     inc/MantidDataObjects/EventWorkspace_fwd.h
     inc/MantidDataObjects/EventWorkspaceHelpers.h

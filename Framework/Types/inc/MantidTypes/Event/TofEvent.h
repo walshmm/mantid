@@ -12,6 +12,7 @@
 namespace Mantid {
 namespace DataObjects {
 class EventList;
+class EventListBase;
 class WeightedEvent;
 class WeightedEventNoTime;
 } // namespace DataObjects
@@ -23,7 +24,7 @@ namespace Event {
 
 class MANTID_TYPES_DLL Event {
 
-}
+};
 
 /** Info about a single neutron detection event:
  *
@@ -35,6 +36,7 @@ class MANTID_TYPES_DLL TofEvent : public Event {
 
   /// EventList has the right to mess with TofEvent.
   friend class DataObjects::EventList;
+  friend class DataObjects::EventListBase;
   friend class DataObjects::WeightedEvent;
   friend class DataObjects::WeightedEventNoTime;
   friend class DataHandling::LoadEventNexus; // Needed while the ISIS hack of

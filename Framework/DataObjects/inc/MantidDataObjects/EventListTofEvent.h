@@ -13,13 +13,13 @@ namespace DataObjects {
 // Share the same definition of wrapper/interface
 class DLLExport EventListTofEvent : public EventListBase {
     bool equals(const EventListBase &rhs, const double tolTof, const double tolWeight,
-                       const int64_t tolPulse) const override;
-    WeightedEvent getEvent(size_t event_number) override;
-    void sortTimeAtSample(const double &tofFactor, const double &tofShift, bool forceResort) const override;
-    size_t getMemorySize() const override;
+                       const int64_t tolPulse) const  ;
+    WeightedEvent getEvent(size_t event_number)  ;
+    void sortTimeAtSample(const double &tofFactor, const double &tofShift, bool forceResort) const  ;
+    size_t getMemorySize() const  ;
     void generateHistogramTimeAtSample(const MantidVec &X, MantidVec &Y, MantidVec &E, const double &tofFactor,
-                                              const double &tofOffset, bool skipError) override;
-    void generateHistogramPulseTime(const MantidVec &X, MantidVec &Y, MantidVec &E, bool skipError) const override;
+                                              const double &tofOffset, bool skipError)  ;
+    void generateHistogramPulseTime(const MantidVec &X, MantidVec &Y, MantidVec &E, bool skipError) const  ;
 };
 
 } // namespace DataObjects

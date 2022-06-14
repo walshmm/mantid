@@ -40,7 +40,7 @@ void EventListTofEventNoTime::sortTimeAtSample(const double &tofFactor, const do
     // Perform sort.
 
     CompareTimeAtSample<WeightedEventNoTime> comparitor(tofFactor, tofShift);
-    tbb::parallel_sort(events.begin(), events.end(), comparitor);
+    tbb::parallel_sort(events->begin(), events->end(), comparitor);
     // Save the order to avoid unnecessary re-sorting.
     this->order = TIMEATSAMPLE_SORT;    
 }
@@ -58,7 +58,7 @@ void EventListTofEventNoTime::sortPulseTimeTOFDelta(const Types::Core::DateAndTi
 }
 
 size_t EventListTofEventNoTime::getMemorySize() const {
-    return this->events.capacity() * sizeof(WeightedEventNoTime) + sizeof(EventListTofEventNoTime);
+    return this->events->capacity() * sizeof(WeightedEventNoTime) + sizeof(EventListTofEventNoTime);
 }
 
 void EventListTofEventNoTime::compressFatEvents(const double tolerance, const Mantid::Types::Core::DateAndTime &timeStart,

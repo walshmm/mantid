@@ -16,7 +16,7 @@ bool EventListTofEvent::equals(const EventListBase &rhs, const double tolTof, co
     // loop over the events
     size_t numEvents = this->getNumberEvents();
     for (size_t i = 0; i < numEvents; ++i) {
-    if (!((TofEvent)this->events[i]).equals(rhs.events[i], tolTof, tolPulse))
+    if (!((TofEvent)*(this->events)[i]).equals(*(rhs.events)[i], tolTof, tolPulse))
         return false;
     }                   
 }
@@ -39,13 +39,13 @@ void EventListTofEvent::sortTimeAtSample(const double &tofFactor, const double &
     // Perform sort.
 
     CompareTimeAtSample<TofEvent> comparitor(tofFactor, tofShift);
-    tbb::parallel_sort(events.begin(), events.end(), comparitor);
+    tbb::parallel_sort(events->begin(), events->end(), comparitor);
     // Save the order to avoid unnecessary re-sorting.
     this->order = TIMEATSAMPLE_SORT;    
 }
 
 size_t EventListTofEvent::getMemorySize() const {
-    return this->events.capacity() * sizeof(TofEvent) + sizeof(EventListTofEvent);
+    return this->events->capacity() * sizeof(TofEvent) + sizeof(EventListTofEvent);
 }
 
 void EventListTofEvent::generateHistogramTimeAtSample(const MantidVec &X, MantidVec &Y, MantidVec &E, const double &tofFactor,

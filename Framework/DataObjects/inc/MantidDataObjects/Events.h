@@ -116,7 +116,7 @@ class DLLExport TofEventNoTime : public Types::Event::Event {
 
   /// Output a string representation of the event to a stream
   friend std::ostream &operator<<(std::ostream &os, const WeightedEvent &event);
-}
+};
 #pragma pack(pop)
 
 //==========================================================================================

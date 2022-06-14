@@ -39,13 +39,13 @@ void EventListWeightedEvent::sortTimeAtSample(const double &tofFactor, const dou
     // Perform sort.
 
     CompareTimeAtSample<WeightedEvent> comparitor(tofFactor, tofShift);
-    tbb::parallel_sort(events.begin(), events.end(), comparitor);
+    tbb::parallel_sort(events->begin(), events->end(), comparitor);
     // Save the order to avoid unnecessary re-sorting.
     this->order = TIMEATSAMPLE_SORT;    
 }
 
 size_t EventListWeightedEvent::getMemorySize() const {
-    return this->events.capacity() * sizeof(WeightedEvent) + sizeof(EventListWeightedEvent);
+    return this->events->capacity() * sizeof(WeightedEvent) + sizeof(EventListWeightedEvent);
 }
 
 void EventListWeightedEvent::generateHistogramTimeAtSample(const MantidVec &X, MantidVec &Y, MantidVec &E, const double &tofFactor,
@@ -61,18 +61,18 @@ void EventListWeightedEvent::generateHistogramPulseTime(const MantidVec &X, Mant
 
 void EventListWeightedEvent::generateHistogram(const MantidVec &X, MantidVec &Y, MantidVec &E, bool skipError) const {
     this->sortTof();
-    histogramForWeightsHelper(this->events, X, Y, E);
+    histogramForWeightsHelper(*(this->events.get()), X, Y, E);
 }
 
 void EventListWeightedEvent::getWeights(std::vector<double> &weights) const {
     weights.reserve(this->getNumberEvents());
-    this->getWeightsHelper(this->events, weights);
+    this->getWeightsHelper(*(this->events.get()), weights);
 }
 
 void EventListWeightedEvent::getWeightErrors(std::vector<double> &weightErrors) const {
     // Set the capacity of the vector to avoid multiple resizes
     weightErrors.reserve(this->getNumberEvents());
-    this->getWeightErrorsHelper(this->events, weightErrors);
+    this->getWeightErrorsHelper(*(this->events.get()), weightErrors);
 }
 
 }

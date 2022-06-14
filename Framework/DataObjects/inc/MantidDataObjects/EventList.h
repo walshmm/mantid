@@ -27,7 +27,7 @@ class Unit;
 } // namespace Kernel
 namespace DataObjects {
 class EventWorkspaceMRU;
-
+class EventListBase;
 /// How the event list is sorted.
 enum EventSortType {
   UNSORTED,
@@ -103,8 +103,7 @@ public:
    * @param event :: TofEvent to add at the end of the list.
    * */
   inline void addEventQuickly(const Types::Event::TofEvent &event) {
-    this->events.emplace_back(event);
-    this->order = UNSORTED;
+    this->eventList->addEventQuickly(event);
   }
 
   // --------------------------------------------------------------------------
@@ -113,8 +112,7 @@ public:
    * @param event :: WeightedEvent to add at the end of the list.
    * */
   inline void addEventQuickly(const WeightedEvent &event) {
-    this->weightedEvents.emplace_back(event);
-    this->order = UNSORTED;
+    this->eventList->addEventQuickly(event);
   }
 
   // --------------------------------------------------------------------------
@@ -123,8 +121,7 @@ public:
    * @param event :: WeightedEventNoTime to add at the end of the list.
    * */
   inline void addEventQuickly(const WeightedEventNoTime &event) {
-    this->weightedEventsNoTime.emplace_back(event);
-    this->order = UNSORTED;
+    this->eventList->addEventQuickly(event);
   }
 
   Mantid::API::EventType getEventType() const override;
@@ -136,7 +133,8 @@ public:
   std::vector<Types::Event::TofEvent> &getEvents();
   const std::vector<Types::Event::TofEvent> &getEvents() const;
 
-  virtual std::vector<Types::Event::Event> &getEventsTyped();
+  std::vector<Types::Event::Event> &getEventsTyped();
+  const std::vector<Types::Event::Event> &getEventsTyped() const;
 
   std::vector<WeightedEvent> &getWeightedEvents();
   const std::vector<WeightedEvent> &getWeightedEvents() const;
@@ -161,7 +159,7 @@ public:
 
   void sortPulseTime() const;
   void sortPulseTimeTOF() const;
-  virtual void sortTimeAtSample(const double &tofFactor, const double &tofShift, bool forceResort = false) const;
+  void sortTimeAtSample(const double &tofFactor, const double &tofShift, bool forceResort = false) const;
 
   bool isSortedByTof() const override;
 
@@ -315,14 +313,26 @@ public:
   void generateCountsHistogramPulseTime(const double &xMin, const double &xMax, MantidVec &Y,
                                         const double TofMin = std::numeric_limits<double>::lowest(),
                                         const double TofMax = std::numeric_limits<double>::max()) const;
-
+mutable std::shared_ptr<EventList> eventList;
 protected:
   void checkAndSanitizeHistogram(HistogramData::Histogram &histogram) override;
   void checkWorksWithPoints() const override;
   void checkIsYAndEWritable() const override;
+
+  
+
 private:
-  mutable EventListBase eventList;
+  const HistogramData::Histogram &histogramRef() const override { throw std::runtime_error("Not Implemented"); };
+  HistogramData::Histogram &mutableHistogramRef() override { throw std::runtime_error("Not Implemented"); };
 };
+
+// Methods overloaded to get event vectors.
+DLLExport void getEventsFrom(EventList &el, std::vector<Types::Event::TofEvent> *&events);
+DLLExport void getEventsFrom(const EventList &el, std::vector<Types::Event::TofEvent> const *&events);
+DLLExport void getEventsFrom(EventList &el, std::vector<WeightedEvent> *&events);
+DLLExport void getEventsFrom(const EventList &el, std::vector<WeightedEvent> const *&events);
+DLLExport void getEventsFrom(EventList &el, std::vector<WeightedEventNoTime> *&events);
+DLLExport void getEventsFrom(const EventList &el, std::vector<WeightedEventNoTime> const *&events);
 
 } // namespace DataObjects
 } // namespace Mantid

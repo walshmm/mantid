@@ -1,3 +1,6 @@
+#include "MantidDataObjects/EventListWeightErrorFunctionsTemplate.h"
+#include "MantidDataObjects/EventListTofFunctionsTemplate.h"
+
 
 namespace Mantid {
 namespace DataObjects {
@@ -182,8 +185,7 @@ void compressEventsParallelHelper(const std::vector<T> &events, std::vector<Weig
  * @param E: error on the value to multiply.
  * @throw invalid_argument if the sizes of X, Y, E are not consistent.
  * */
-template <class T>
-void EventListBase::multiplyHistogramHelper(std::vector<T> &events, const MantidVec &X, const MantidVec &Y,
+void multiplyHistogramHelper(std::vector<T> &events, const MantidVec &X, const MantidVec &Y,
                                         const MantidVec &E) {
   // Validate inputs
   if ((X.size() < 2) || (Y.size() != E.size()) || (X.size() != 1 + Y.size())) {
@@ -265,8 +267,7 @@ void EventListBase::multiplyHistogramHelper(std::vector<T> &events, const Mantid
  * @param E: error on the value to dividing.
  * @throw invalid_argument if the sizes of X, Y, E are not consistent.
  * */
-template <class T>
-void EventListBase::divideHistogramHelper(std::vector<T> &events, const MantidVec &X, const MantidVec &Y,
+void divideHistogramHelper(std::vector<T> &events, const MantidVec &X, const MantidVec &Y,
                                       const MantidVec &E) {
   // Validate inputs
   if ((X.size() < 2) || (Y.size() != E.size()) || (X.size() != 1 + Y.size())) {
@@ -352,7 +353,7 @@ void EventListBase::divideHistogramHelper(std::vector<T> &events, const MantidVe
 
 
     friend T;
-    EventListTemplate() = default;
+    EventListWeightErrorTofFunctionsTemplate() = default;
 
     inline T & as_underlying()
     {

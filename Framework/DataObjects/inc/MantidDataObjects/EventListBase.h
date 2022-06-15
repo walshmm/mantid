@@ -12,6 +12,7 @@
 #include "MantidKernel/MultiThreaded.h"
 #include "MantidKernel/System.h"
 #include "MantidKernel/cow_ptr.h"
+#include "MantidDataObjects/CompareTimeAtSample.h"
 #include <iosfwd>
 #include <memory>
 #include <vector>

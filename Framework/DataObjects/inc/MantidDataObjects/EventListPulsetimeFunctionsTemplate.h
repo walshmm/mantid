@@ -1,8 +1,10 @@
 
+#include "MantidDataObjects/EventListBaseFunctionsTemplate.h"
+
 namespace Mantid {
 namespace DataObjects {
 template <typename T>
-class EventListPulsetimeFunctionsTemplate
+class EventListPulsetimeFunctionsTemplate : public EventListBaseFunctionsTemplate<T>
 {
   
 
@@ -17,8 +19,7 @@ private:
  * @param seek_pulsetime :: pulse time to find (typically the first bin X[0])
  * @return iterator where the first event matching it is.
  */
-template <class T>
-typename std::vector<T>::const_iterator EventListBase::findFirstPulseEvent(const std::vector<T> &events,
+typename std::vector<T>::const_iterator findFirstPulseEvent(const std::vector<T> &events,
                                                                        const double seek_pulsetime) {
   auto itev = events.begin();
   auto itev_end = events.end(); // cache for speed
@@ -37,7 +38,7 @@ typename std::vector<T>::const_iterator EventListBase::findFirstPulseEvent(const
  * @param events :: reference to a vector of events to change.
  * @param seconds :: The value to shift the pulsetime by, in seconds
  */
-template <class T> void EventListBase::addPulsetimeHelper(std::vector<T> &events, const double seconds) {
+void addPulsetimeHelper(std::vector<T> &events, const double seconds) {
   // iterate through all events
   for (auto &event : events) {
     event.m_pulsetime += seconds;
@@ -51,7 +52,7 @@ template <class T> void EventListBase::addPulsetimeHelper(std::vector<T> &events
  * @param events :: reference to a vector of events to change.
  * @param seconds :: The set of values to shift the pulsetime by, in seconds
  */
-template <class T> void EventListBase::addPulsetimesHelper(std::vector<T> &events, const std::vector<double> &seconds) {
+void addPulsetimesHelper(std::vector<T> &events, const std::vector<double> &seconds) {
   auto eventIterEnd{events->end()};
   auto secondsIter{seconds.cbegin()};
   for (auto eventIter = events->begin(); eventIter < eventIterEnd; ++eventIter, ++secondsIter) {
@@ -65,8 +66,7 @@ template <class T> void EventListBase::addPulsetimesHelper(std::vector<T> &event
  * @param events :: source vector of events
  * @param times :: vector to fill
  */
-template <class T>
-void EventListBase::getPulseTimesHelper(const std::vector<T> &events,
+void getPulseTimesHelper(const std::vector<T> &events,
                                     std::vector<Mantid::Types::Core::DateAndTime> &times) {
   times.clear();
   times.reserve(events.size());
@@ -81,8 +81,7 @@ void EventListBase::getPulseTimesHelper(const std::vector<T> &events,
  * @param stop :: end time (absolute)
  * @param output :: reference to an event list that will be output.
  */
-template <class T>
-void EventListBase::filterByPulseTimeHelper(std::vector<T> &events, DateAndTime start, DateAndTime stop,
+void filterByPulseTimeHelper(std::vector<T> &events, DateAndTime start, DateAndTime stop,
                                         std::vector<T> &output) {
   auto itev = events.begin();
   auto itev_end = events.end();
@@ -107,8 +106,7 @@ void EventListBase::filterByPulseTimeHelper(std::vector<T> &events, DateAndTime 
  *     that will be kept. Any other events will be deleted.
  * @param events :: either this->events or this->weightedevents.
  */
-template <class T>
-void EventListBase::filterInPlaceHelper(Kernel::TimeSplitterType &splitter, typename std::vector<T> &events) {
+void filterInPlaceHelper(Kernel::TimeSplitterType &splitter, typename std::vector<T> &events) {
   // Iterate through the splitter at the same time
   auto itspl = splitter.begin();
   auto itspl_end = splitter.end();
@@ -184,8 +182,7 @@ void EventListBase::filterInPlaceHelper(Kernel::TimeSplitterType &splitter, type
  *        be big enough to accommodate the indices.
  * @param events :: either this->events or this->weightedevents.
  */
-template <class T>
-void EventListBase::splitByTimeHelper(Kernel::TimeSplitterType &splitter, std::vector<EventListBase *> outputs,
+void splitByTimeHelper(Kernel::TimeSplitterType &splitter, std::vector<EventListBase *> outputs,
                                   typename std::vector<T> &events) const {
   size_t numOutputs = outputs.size();
 
@@ -238,8 +235,7 @@ void EventListBase::splitByTimeHelper(Kernel::TimeSplitterType &splitter, std::v
 //--------------------------------------------------
 /** Split the event list into n outputs by each event's pulse time only
  */
-template <class T>
-void EventListBase::splitByPulseTimeHelper(Kernel::TimeSplitterType &splitter, std::map<int, EventListBase *> outputs,
+void splitByPulseTimeHelper(Kernel::TimeSplitterType &splitter, std::map<int, EventListBase *> outputs,
                                        typename std::vector<T> &events) const {
   // Prepare to TimeSplitter Iterate through the splitter at the same time
   auto itspl = splitter.begin();
@@ -296,8 +292,7 @@ void EventListBase::splitByPulseTimeHelper(Kernel::TimeSplitterType &splitter, s
   } // END-WHILE Splitter
 }
 
-template <class T>
-void EventListBase::splitByPulseTimeWithMatrixHelper(const std::vector<int64_t> &vec_split_times,
+void splitByPulseTimeWithMatrixHelper(const std::vector<int64_t> &vec_split_times,
                                                  const std::vector<int> &vec_split_target,
                                                  std::map<int, EventListBase *> outputs,
                                                  typename std::vector<T> &events) const {
@@ -351,7 +346,7 @@ void EventListBase::splitByPulseTimeWithMatrixHelper(const std::vector<int64_t> 
 }
 
     friend T;
-    EventListTemplate() = default;
+    EventListPulsetimeFunctionsTemplate() = default;
 
     inline T & as_underlying()
     {

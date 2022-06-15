@@ -1,8 +1,10 @@
 
+#include "MantidDataObjects/EventListBaseFunctionsTemplate.h"
+
 namespace Mantid {
 namespace DataObjects {
 template <typename T>
-class EventListTofFunctionsTemplate
+class EventListTofFunctionsTemplate : public EventListBaseFunctionsTemplate<T>
 {
   
 
@@ -12,7 +14,7 @@ private:
      * @param events
      * @param func
      */
-    template <class T> void EventListBase::convertTofHelper(std::vector<T> &events, const std::function<double(double)> &func) {
+    void convertTofHelper(std::vector<T> &events, const std::function<double(double)> &func) {
     // iterate through all events
     for (auto &ev : events)
         ev.m_tof = func(ev.m_tof);
@@ -27,7 +29,7 @@ private:
      * @param factor :: multiply by this
      * @param offset :: add this
      */
-    template <class T> void EventListBase::convertTofHelper(std::vector<T> &events, const double factor, const double offset) {
+    void convertTofHelper(std::vector<T> &events, const double factor, const double offset) {
     // iterate through all events
     for (auto &event : events) {
         event.m_tof = event.m_tof * factor + offset;
@@ -43,8 +45,7 @@ private:
  * @param tofMax :: upper bound of TOF to filter out
  * @returns The number of events deleted.
  */
-template <class T>
-std::size_t EventListBase::maskTofHelper(std::vector<T> &events, const double tofMin, const double tofMax) {
+std::size_t maskTofHelper(std::vector<T> &events, const double tofMin, const double tofMax) {
   // quick checks to make sure that the masking range is even in the data
   if (tofMin > events.rbegin()->tof())
     return 0;
@@ -80,7 +81,7 @@ std::size_t EventListBase::maskTofHelper(std::vector<T> &events, const double to
  * @param events :: source vector of events
  * @param tofs :: vector to fill
  */
-template <class T> void EventListBase::getTofsHelper(const std::vector<T> &events, std::vector<double> &tofs) {
+ void getTofsHelper(const std::vector<T> &events, std::vector<double> &tofs) {
   tofs.clear();
   for (auto itev = events.cbegin(); itev != events.cend(); ++itev)
     tofs.emplace_back(itev->m_tof);
@@ -92,7 +93,7 @@ template <class T> void EventListBase::getTofsHelper(const std::vector<T> &event
  * @param events :: source vector of events
  * @param tofs :: The vector of doubles to set the tofs to.
  */
-template <class T> void EventListBase::setTofsHelper(std::vector<T> &events, const std::vector<double> &tofs) {
+void setTofsHelper(std::vector<T> &events, const std::vector<double> &tofs) {
   if (tofs.empty())
     return;
 
@@ -112,8 +113,7 @@ template <class T> void EventListBase::setTofsHelper(std::vector<T> &events, con
  * @param fromUnit the unit to convert from
  * @param toUnit the unit to convert to
  */
-template <class T>
-void EventListBase::convertUnitsViaTofHelper(typename std::vector<T> &events, Mantid::Kernel::Unit *fromUnit,
+void convertUnitsViaTofHelper(typename std::vector<T> &events, Mantid::Kernel::Unit *fromUnit,
                                          Mantid::Kernel::Unit *toUnit) {
   auto itev = events.begin();
   auto itev_end = events.end();
@@ -132,8 +132,7 @@ void EventListBase::convertUnitsViaTofHelper(typename std::vector<T> &events, Ma
  *  @param factor :: the conversion factor a to apply
  *  @param power :: the Power b to apply to the conversion
  */
-template <class T>
-void EventListBase::convertUnitsQuicklyHelper(typename std::vector<T> &events, const double &factor, const double &power) {
+void convertUnitsQuicklyHelper(typename std::vector<T> &events, const double &factor, const double &power) {
   for (auto &event : events) {
     // Output unit = factor * (input) ^ power
     event.m_tof = factor * std::pow(event.m_tof, power);
@@ -141,7 +140,7 @@ void EventListBase::convertUnitsQuicklyHelper(typename std::vector<T> &events, c
 }
 
     friend T;
-    EventListTemplate() = default;
+    EventListTofFunctionsTemplate() = default;
 
     inline T & as_underlying()
     {

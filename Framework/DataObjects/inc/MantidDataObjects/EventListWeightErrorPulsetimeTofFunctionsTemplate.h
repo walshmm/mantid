@@ -1,3 +1,5 @@
+#include "MantidDataObjects/EventListWeightErrorTofFunctionsTemplate.h"
+#include "MantidDataObjects/EventListPulsetimeTofFunctionsTemplate.h"
 
 namespace Mantid {
 namespace DataObjects {
@@ -17,7 +19,7 @@ private:
      * @param more_events :: Another event vector being subtracted from this.
      * @return reference to this
      * */
-    template <class T1, class T2> void EventListBase::minusHelper(std::vector<T1> &events, const std::vector<T2> &more_events) {
+    template <class T1, class T2> void minusHelper(std::vector<T1> &events, const std::vector<T2> &more_events) {
     // Make the end vector big enough in one go (avoids repeated re-allocations).
     events.reserve(events.size() + more_events.size());
     /* In the event of subtracting in place, calling the end() vector would make
@@ -33,8 +35,7 @@ private:
     }
 
    
-template <class T>
-inline void EventListBase::compressFatEventsHelper(const std::vector<T> &events, std::vector<WeightedEvent> &out,
+inline void compressFatEventsHelper(const std::vector<T> &events, std::vector<WeightedEvent> &out,
                                                const double tolerance, const Types::Core::DateAndTime &timeStart,
                                                const double seconds) {
   // Clear the output. We can't know ahead of time how much space to reserve :(
@@ -135,7 +136,7 @@ inline void EventListBase::compressFatEventsHelper(const std::vector<T> &events,
 }
 
     friend T;
-    EventListTemplate() = default;
+    EventListWeightErrorPulsetimeTofFunctionsTemplate() = default;
 
     inline T & as_underlying()
     {

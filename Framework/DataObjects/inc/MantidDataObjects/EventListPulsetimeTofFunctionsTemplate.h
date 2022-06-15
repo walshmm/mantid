@@ -1,3 +1,6 @@
+#include "MantidDataObjects/EventListPulsetimeFunctionsTemplate.h"
+#include "MantidDataObjects/EventListTofFunctionsTemplate.h"
+
 
 namespace Mantid {
 namespace DataObjects {
@@ -12,7 +15,6 @@ private:
      * @param tofShift : Tof shift in seconds
      * @return Corrected full time at sample in Nanoseconds.
      */
-    template <typename T>
     int64_t calculateCorrectedFullTime(const T &event, const double tofFactor, const double tofShift) {
     return event.pulseTime().totalNanoseconds() +
             static_cast<int64_t>(tofFactor * (event.tof() * 1.0E3) + (tofShift * 1.0E9));
@@ -34,8 +36,7 @@ private:
  * @param tofshift :: amount to shift (in SECOND) to correct TOF in formula:
  *toffactor*tof+tofshift
  */
-template <class T>
-void EventListBase::splitByFullTimeHelper(Kernel::TimeSplitterType &splitter, std::map<int, EventListBase *> outputs,
+void splitByFullTimeHelper(Kernel::TimeSplitterType &splitter, std::map<int, EventListBase *> outputs,
                                       typename std::vector<T> &events, bool docorrection, double toffactor,
                                       double tofshift) const {
   // 1. Prepare to Iterate through the splitter at the same time
@@ -121,9 +122,7 @@ void EventListBase::splitByFullTimeHelper(Kernel::TimeSplitterType &splitter, st
  * @param tofshift :: shift in SECOND to TOF for correcting event time from
  *detector to sample
  */
-template <class T>
-std::string
-EventListBase::splitByFullTimeVectorSplitterHelper(const std::vector<int64_t> &vectimes, const std::vector<int> &vecgroups,
+std::string splitByFullTimeVectorSplitterHelper(const std::vector<int64_t> &vectimes, const std::vector<int> &vecgroups,
                                                std::map<int, EventListBase *> outputs, typename std::vector<T> &vecEvents,
                                                bool docorrection, double toffactor, double tofshift) const {
   // Define variables for events
@@ -189,8 +188,7 @@ EventListBase::splitByFullTimeVectorSplitterHelper(const std::vector<int64_t> &v
  * @param tofshift :: shift in SECOND to TOF for correcting event time from
  *detector to sample
  */
-template <class T>
-std::string EventListBase::splitByFullTimeSparseVectorSplitterHelper(const std::vector<int64_t> &vectimes,
+std::string splitByFullTimeSparseVectorSplitterHelper(const std::vector<int64_t> &vectimes,
                                                                  const std::vector<int> &vecgroups,
                                                                  std::map<int, EventListBase *> outputs,
                                                                  typename std::vector<T> &vecEvents, bool docorrection,
@@ -269,7 +267,7 @@ std::string EventListBase::splitByFullTimeSparseVectorSplitterHelper(const std::
 }
 
     friend T;
-    EventListTemplate() = default;
+    EventListPulsetimeTofFunctionsTemplate() = default;
 
     inline T & as_underlying()
     {

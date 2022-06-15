@@ -39,37 +39,6 @@ using Types::Core::DateAndTime;
 using Types::Event::TofEvent;
 using namespace Mantid::API;
 
-namespace {
-
-const double SEC_TO_NANO = 1.e9;
-
-/**
- * Type for comparing events in terms of time at sample
- */
-template <typename EventType> class CompareTimeAtSample {
-private:
-  const double m_tofFactor;
-  const double m_tofShift;
-
-public:
-  CompareTimeAtSample(const double tofFactor, const double tofShift) : m_tofFactor(tofFactor), m_tofShift(tofShift) {}
-
-  /**
-   * Compare two events based on the time they arrived at the sample.
-   * Coefficient is used to provide scaling.
-   * For elastic scattering coefficient is L1 / (L1 + L2)
-   * @param e1 :: first event to compare
-   * @param e2 :: second event to compare
-   * @param coefficient :: scaling coefficient
-   * @return True if first event evaluates to be < second event, otherwise false
-   */
-  bool operator()(const EventType &e1, const EventType &e2) const {
-    const auto tAtSample1 = calculateCorrectedFullTime(e1, m_tofFactor, m_tofShift);
-    const auto tAtSample2 = calculateCorrectedFullTime(e2, m_tofFactor, m_tofShift);
-    return (tAtSample1 < tAtSample2);
-  }
-};
-} // namespace
 //==========================================================================
 /// --------------------- TofEvent Comparators
 /// ----------------------------------
@@ -1543,22 +1512,6 @@ void EventListBase::generateErrorsHistogram(const MantidVec &Y, MantidVec &E) co
   std::transform(Y.begin(), Y.end(), E.begin(), static_cast<double (*)(double)>(sqrt));
 
 } //----------------------------------------------------------------------------------
-/** Integrate the events between a range of X values, or all events->
- *
- * @param events :: reference to a vector of events to change.
- * @param minX :: minimum X bin to use in integrating.
- * @param maxX :: maximum X bin to use in integrating.
- * @param entireRange :: set to true to use the entire range. minX and maxX are
- *then ignored!
- * @return the integrated number of events->
- */
-template <class T>
-double EventListBase::integrateHelper(std::vector<T> &events, const double minX, const double maxX,
-                                  const bool entireRange) {
-  double sum(0), error(0);
-  integrateHelper(events, minX, maxX, entireRange, sum, error);
-  return sum;
-}
 
 // --------------------------------------------------------------------------
 /** Integrate the events between a range of X values, or all events->
@@ -1728,34 +1681,7 @@ void EventListBase::maskTof(const double tofMin, const double tofMax) {
     this->clear(false);
 }
 
-// --------------------------------------------------------------------------
-/** Mask out events by the condition vector.
- * Events are removed from the list.
- * @param events :: reference to a vector of events to change.
- * @param mask :: condition vector
- * @returns The number of events deleted.
- */
-template <class T> std::size_t EventListBase::maskConditionHelper(std::vector<T> &events, const std::vector<bool> &mask) {
 
-  // runs through the two synchronized vectors and delete elements
-  // for condition false
-  auto itm = std::find(mask.begin(), mask.end(), false);
-  auto first = events.begin() + (itm - mask.begin());
-
-  if (itm != mask.end()) {
-    for (auto ite = first; ++ite != events.end() && ++itm != mask.end();) {
-      if (*itm != false) {
-        *first++ = std::move(*ite);
-      }
-    }
-  }
-
-  auto n = events.end() - first;
-  if (n != 0)
-    events.erase(first, events.end());
-
-  return n;
-}
 
 // --------------------------------------------------------------------------
 /**

@@ -1,3 +1,6 @@
+#include "MantidDataObjects/EventListWeightFunctionsTemplate.h"
+#include "MantidDataObjects/EventListErrorFunctionsTemplate.h"
+
 
 namespace Mantid {
 namespace DataObjects {
@@ -7,6 +10,23 @@ class EventListWeightErrorFunctionsTemplate : public EventListWeightFunctionsTem
   
 
 private:
+
+/** Integrate the events between a range of X values, or all events->
+ *
+ * @param events :: reference to a vector of events to change.
+ * @param minX :: minimum X bin to use in integrating.
+ * @param maxX :: maximum X bin to use in integrating.
+ * @param entireRange :: set to true to use the entire range. minX and maxX are
+ *then ignored!
+ * @return the integrated number of events->
+ */
+double integrateHelper(std::vector<T> &events, const double minX, const double maxX,
+                                  const bool entireRange) {
+  double sum(0), error(0);
+  integrateHelper(events, minX, maxX, entireRange, sum, error);
+  return sum;
+}
+
 
     /** Integrate the events between a range of X values, or all events->
  *
@@ -18,8 +38,7 @@ private:
  * @param sum :: reference to a double to put the sum in.
  * @param error :: reference to a double to put the error in.
  */
-template <class T>
-void EventListBase::integrateHelper(std::vector<T> &events, const double minX, const double maxX, const bool entireRange,
+void integrateHelper(std::vector<T> &events, const double minX, const double maxX, const bool entireRange,
                                 double &sum, double &error) {
   sum = 0;
   error = 0;
@@ -63,7 +82,7 @@ void EventListBase::integrateHelper(std::vector<T> &events, const double minX, c
  * @param value: multiply all weights by this amount.
  * @param error: error on 'value'. Can be 0.
  * */
-template <class T> void EventListBase::multiplyHelper(std::vector<T> &events, const double value, const double error) {
+void multiplyHelper(std::vector<T> &events, const double value, const double error) {
   // Square of the value's error
   double errorSquared = error * error;
   double valueSquared = value * value;
@@ -89,7 +108,7 @@ template <class T> void EventListBase::multiplyHelper(std::vector<T> &events, co
 
 
     friend T;
-    EventListTemplate() = default;
+    EventListWeightErrorFunctionsTemplate() = default;
 
     inline T & as_underlying()
     {

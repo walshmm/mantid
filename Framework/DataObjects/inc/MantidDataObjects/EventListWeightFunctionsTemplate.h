@@ -1,8 +1,9 @@
+#include "MantidDataObjects/EventListBaseFunctionsTemplate.h"
 
 namespace Mantid {
 namespace DataObjects {
 template <typename T>
-class EventListWeightFunctionsTemplate
+class EventListWeightFunctionsTemplate : public EventListBaseFunctionsTemplate<T>
 {
   
 
@@ -14,7 +15,7 @@ private:
  * @param events :: source vector of events
  * @param weights :: vector to fill
  */
-template <class T> void EventListBase::getWeightsHelper(const std::vector<T> &events, std::vector<double> &weights) {
+void getWeightsHelper(const std::vector<T> &events, std::vector<double> &weights) {
   weights.clear();
   weights.reserve(events.size());
   std::transform(events.cbegin(), events.cend(), std::back_inserter(weights),
@@ -22,7 +23,7 @@ template <class T> void EventListBase::getWeightsHelper(const std::vector<T> &ev
 }
 
     friend T;
-    EventListTemplate() = default;
+    EventListWeightFunctionsTemplate() = default;
 
     inline T & as_underlying()
     {

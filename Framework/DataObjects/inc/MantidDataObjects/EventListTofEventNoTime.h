@@ -7,11 +7,12 @@
 #pragma once
 
 #include "MantidDataObjects/EventListBase.h"
+#include "MantidDataObjects/EventListTofFunctionsTemplate.h"
 
 namespace Mantid {
 namespace DataObjects {
 // Share the same definition of wrapper/interface
-class DLLExport EventListTofEventNoTime : public EventListBase {
+class DLLExport EventListTofEventNoTime : public EventListBase, public EventListTofFunctionsTemplate<TofEventNoTime> {
     bool equals(const EventListBase &rhs, const double tolTof, const double tolWeight,
                        const int64_t tolPulse) const  ;
     WeightedEvent getEvent(size_t event_number)  ;

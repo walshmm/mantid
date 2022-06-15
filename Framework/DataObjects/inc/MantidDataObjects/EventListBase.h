@@ -335,6 +335,8 @@ private:
   /// Mutex that is locked while sorting an event list
   mutable std::mutex m_sortMutex;
 
+  
+
   template <class T>
   static typename std::vector<T>::const_iterator findFirstPulseEvent(const std::vector<T> &events,
                                                                      const double seek_pulsetime);

@@ -77,7 +77,15 @@ set(INC_FILES
     inc/MantidDataObjects/DllConfig.h
     inc/MantidDataObjects/EventList.h
     inc/MantidDataObjects/EventListBase.h
-    inc/MantidDataObjects/EventListTemplate.h
+    inc/MantidDataObjects/EventListBaseFunctionsTemplate.h
+    inc/MantidDataObjects/EventListTofFunctionsTemplate.h
+    inc/MantidDataObjects/EventListPulsetimeFunctionsTemplate.h
+    inc/MantidDataObjects/EventListErrorFunctionsTemplate.h
+    inc/MantidDataObjects/EventListWeightFunctionsTemplate.h
+    inc/MantidDataObjects/EventListPulsetimeTofFunctionsTemplate.h
+    inc/MantidDataObjects/EventListWeightErrorFunctionsTemplate.h
+    inc/MantidDataObjects/EventListWeightErrorTofFunctionsTemplate.h
+    inc/MantidDataObjects/EventListWeightErrorPulsetimeTofFunctionsTemplate.h
     inc/MantidDataObjects/EventListTofEvent.h
     inc/MantidDataObjects/EventListTofEventNoTime.h
     inc/MantidDataObjects/EventListWeightedEvent.h

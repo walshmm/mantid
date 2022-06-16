@@ -8,11 +8,15 @@
 
 #include "MantidDataObjects/EventListBase.h"
 #include "MantidDataObjects/EventListTofFunctionsTemplate.h"
+#include "MantidDataObjects/EventListMinusHelperFunctions.h"
 
 namespace Mantid {
 namespace DataObjects {
 // Share the same definition of wrapper/interface
-class DLLExport EventListTofEventNoTime : public EventListBase, public EventListTofFunctionsTemplate<TofEventNoTime> {
+class DLLExport EventListTofEventNoTime : 
+public EventListBase, 
+public EventListTofFunctionsTemplate<TofEventNoTime>,
+public EventListPermutationsMinusHelperFunctions<TofEventNoTime> {
     bool equals(const EventListBase &rhs, const double tolTof, const double tolWeight,
                        const int64_t tolPulse) const  ;
     WeightedEvent getEvent(size_t event_number)  ;
@@ -37,6 +41,7 @@ class DLLExport EventListTofEventNoTime : public EventListBase, public EventList
     void splitByPulseTime(Kernel::TimeSplitterType &splitter, std::map<int, EventListBase *> outputs) const  ;
     void splitByPulseTimeWithMatrix(const std::vector<int64_t> &vec_times, const std::vector<int> &vec_target,
                                            std::map<int, EventListBase *> outputs) const  ;
+    EventListTofEventNoTime &operator-=(const EventListBase &more_events);
 };
 
 } // namespace DataObjects

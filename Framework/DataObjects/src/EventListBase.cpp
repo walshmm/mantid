@@ -404,46 +404,6 @@ EventListBase &EventListBase::operator+=(const EventListBase &more_events) {
 }
 
 // --------------------------------------------------------------------------
-/** SUBTRACT another EventListBase from this event list.
- * The event lists are concatenated, but the weights of the incoming
- *    list are multiplied by -1.0.
- *
- * @param more_events :: Another EventListBase.
- * @return reference to this
- * */
-EventListBase &EventListBase::operator-=(const EventListBase &more_events) {
-  if (this == &more_events) {
-    // Special case, ticket #3844 part 2.
-    // When doing this = this - this,
-    // simply clear the input event list. Saves memory!
-    this->clearData();
-    return *this;
-  }
-
-  // We'll let the -= operator for the given vector of event lists handle it
-  // case TOF:
-  //   this->switchTo(WEIGHTED);
-  //   // Fall through
-
-
-    // case WEIGHTED_NOTIME:
-    //   // TODO: Should this throw?
-    //   minusHelper(this->weightedEvents, more_events->weightedEventsNoTime);
-    //   break;
-    // case UNWEIGHTED:
-    //   // TODO: Should this throw?
-    //   minusHelper(this->weightedEvents, more_events->unweightedEvents);
-    //   break;
-
-  minusHelper(*(this->events), more_events->events);
-  // No guaranteed order
-  this->order = UNSORTED;
-
-  // NOTE: What to do about detector ID's?
-  return *this;
-}
-
-// --------------------------------------------------------------------------
 /** Equality operator between EventListBase's
  * @param rhs :: other EventListBase to compare
  * @return :: true if equal.
@@ -1155,9 +1115,18 @@ inline double calcNorm(const double errorSquared) {
  * @param destination :: EventListBase that will receive the compressed events-> Can
  *be == this.
  */
-void EventListBase::compressEvents(double tolerance, EventListBase *destination) {
+
+//NOTE: Dont like that this is operating with a parent type as a parameter
+void EventListBase::compressEvents(double tolerance, EventList *destination) {
   if (!this->empty()) {
     this->sortTof();
+
+    //in the wrapper do this before calling compress Events
+    destination->clear()
+    destination->switchTo(WEIGHTED_NOTIME)
+
+
+    //should work because the wrapper's equal operator refers to the wrapped EventList for equality
     if (destination == this) {
             // Put results in a temp output
             std::vector<Event> out;
@@ -1184,10 +1153,10 @@ void EventListBase::compressFatEvents(const double tolerance, const Mantid::Type
   if (!this->empty()) {
     if (destination == this) {
       // Put results in a temp output
-      std::vector<Event> out;
+      std::vector<WeightedEvent> out;
       compressFatEventsHelper(*(this->events), out, tolerance, timeStart, seconds);
       // Put it back
-      this->weightedEveventsents.swap(out);
+      *(this->events).swap(out);
     } else {
       compressFatEventsHelper(*(this->events), destination->events, tolerance, timeStart, seconds);
     }

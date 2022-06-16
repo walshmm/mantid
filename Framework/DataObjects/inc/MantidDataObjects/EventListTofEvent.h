@@ -21,6 +21,7 @@ class DLLExport EventListTofEvent : public EventListBase, public EventListWeight
     void generateHistogramTimeAtSample(const MantidVec &X, MantidVec &Y, MantidVec &E, const double &tofFactor,
                                               const double &tofOffset, bool skipError)  ;
     void generateHistogramPulseTime(const MantidVec &X, MantidVec &Y, MantidVec &E, bool skipError) const  ;
+    EventListTofEvent &operator-=(const EventListBase &more_events);
 };
 
 } // namespace DataObjects

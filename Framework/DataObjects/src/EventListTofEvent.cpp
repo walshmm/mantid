@@ -65,4 +65,16 @@ void EventListTofEvent::generateHistogramPulseTime(const MantidVec &X, MantidVec
       this->generateErrorsHistogram(Y, E);
 }
 
+// --------------------------------------------------------------------------
+/** SUBTRACT another EventListBase from this event list.
+ * The event lists are concatenated, but the weights of the incoming
+ *    list are multiplied by -1.0.
+ *
+ * @param more_events :: Another EventListBase.
+ * @return reference to this
+ * */
+EventListTofEvent &EventListTofEvent::operator-=(const EventListBase &more_events) {
+  throw std::logic_error("EventListTofEvent's must be converted to EventListWeightedEvent, how did you get here?");
+}
+
 }

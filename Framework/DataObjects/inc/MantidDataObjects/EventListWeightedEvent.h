@@ -8,11 +8,15 @@
 
 #include "MantidDataObjects/EventListBase.h"
 #include "MantidDataObjects/EventListWeightErrorPulsetimeTofFunctionsTemplate.h"
+#include "MantidDataObjects/EventListMinusHelperFunctions.h"
 
 namespace Mantid {
 namespace DataObjects {
 // Share the same definition of wrapper/interface
-class DLLExport EventListWeightedEvent : public EventListBase, public EventListWeightErrorPulsetimeTofFunctionsTemplate<WeightedEvent> {
+class DLLExport EventListWeightedEvent : 
+public EventListBase, 
+public EventListWeightErrorPulsetimeTofFunctionsTemplate<WeightedEvent>,
+public EventListPermutationsMinusHelperFunctions<WeightedEvent> {
     bool equals(const EventListBase &rhs, const double tolTof, const double tolWeight,
                        const int64_t tolPulse) const  ;
     WeightedEvent getEvent(size_t event_number)  ;
@@ -24,6 +28,7 @@ class DLLExport EventListWeightedEvent : public EventListBase, public EventListW
     void generateHistogram(const MantidVec &X, MantidVec &Y, MantidVec &E, bool skipError) const  ;
     void getWeights(std::vector<double> &weights) const  ;
     void getWeightErrors(std::vector<double> &weightErrors) const  ;
+    EventListWeightedEvent &operator-=(const EventListBase &more_events);
 };
 
 } // namespace DataObjects

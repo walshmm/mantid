@@ -29,6 +29,10 @@ public EventListPermutationsMinusHelperFunctions<WeightedEvent> {
     void getWeights(std::vector<double> &weights) const  ;
     void getWeightErrors(std::vector<double> &weightErrors) const  ;
     EventListWeightedEvent &operator-=(const EventListBase &more_events);
+
+    // private:
+    //  /// List of Events
+    // std::vector<WeightedEvent> events;
 };
 
 } // namespace DataObjects

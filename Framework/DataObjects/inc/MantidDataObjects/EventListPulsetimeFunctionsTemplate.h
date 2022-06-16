@@ -6,9 +6,41 @@ namespace DataObjects {
 template <typename T>
 class EventListPulsetimeFunctionsTemplate : public EventListBaseFunctionsTemplate<T>
 {
-  
+public:
+
+void EventListBase::sort(const EventSortType order) const {
+  if (order == UNSORTED) {
+    return; // don't bother doing anything. Why did you ask to unsort?
+  } else if (order == PULSETIME_SORT) {
+    this->sortPulseTime();
+  }
+}
+// --------------------------------------------------------------------------
+/** Sort events by Frame */
+void EventListBase::sortPulseTime() const {
+  if (this->order == PULSETIME_SORT)
+    return; // nothing to do
+
+  // Avoid sorting from multiple threads
+  std::lock_guard<std::mutex> _lock(m_sortMutex);
+  // If the list was sorted while waiting for the lock, return.
+  if (this->order == PULSETIME_SORT)
+    return;
+
+  tbb::parallel_sort(events->begin(), events->end(), compareEventPulseTime);
+ 
+  // Save the order to avoid unnecessary re-sorting.
+  this->order = PULSETIME_SORT;
+}
 
 private:
+/** Compare two events' FRAME id, return true if e1 should be before e2.
+ * @param e1 :: first event
+ * @param e2 :: second event
+ *  */
+bool compareEventPulseTime(const TofEvent &e1, const TofEvent &e2) { return (e1.pulseTime() < e2.pulseTime()); }
+
+
     // --------------------------------------------------------------------------
 /** Utility function:
  * Returns the iterator into events of the first TofEvent with
@@ -30,6 +62,33 @@ typename std::vector<T>::const_iterator findFirstPulseEvent(const std::vector<T>
   // Better fix would be to use a binary search instead of the linear one used
   // here.
   return itev;
+}
+
+// --------------------------------------------------------------------------
+/** Add an offset to the pulsetime (wall-clock time) of each event in the list.
+ *
+ * @param seconds :: A set of values to shift the pulsetime by, in seconds
+ */
+void addPulsetimes(const std::vector<double> &seconds) {
+  if (this->getNumberEvents() <= 0)
+    return;
+  if (this->getNumberEvents() != seconds.size()) {
+    throw std::runtime_error("");
+  }
+  this->addPulsetimesHelper(*(this->events), seconds);
+}
+
+// --------------------------------------------------------------------------
+/** Add an offset to the pulsetime (wall-clock time) of each event in the list.
+ *
+ * @param seconds :: The value to shift the pulsetime by, in seconds
+ */
+void addPulsetime(const double seconds) {
+  if (this->getNumberEvents() <= 0)
+    return;
+
+  // Convert the list
+  this->addPulsetimeHelper(*(this->events), seconds);
 }
 
 // --------------------------------------------------------------------------
@@ -58,6 +117,107 @@ void addPulsetimesHelper(std::vector<T> &events, const std::vector<double> &seco
   for (auto eventIter = events->begin(); eventIter < eventIterEnd; ++eventIter, ++secondsIter) {
     eventIter->m_pulsetime += *secondsIter;
   }
+}
+
+void getPulseTimeMinMax(Mantid::Types::Core::DateAndTime &tMin,
+                                   Mantid::Types::Core::DateAndTime &tMax) const {
+  // set up as the minimum available date time.
+  tMax = DateAndTime::minimum();
+  tMin = DateAndTime::maximum();
+
+  // no events is a soft error
+  if (this->empty())
+    return;
+
+  // when events are ordered by pulse time just need the first/last values
+  if (this->order == PULSETIME_SORT) {
+    Min = this->events->begin()->pulseTime();
+    tMax = this->events->rbegin()->pulseTime();
+    return;
+  }
+
+  // now we are stuck with a linear search
+  size_t numEvents = this->events.size();
+  DateAndTime temp = tMax; // start with the smallest possible value
+  for (size_t i = 0; i < numEvents; i++) {
+    temp = this->events[i].pulseTime();
+    
+    if (temp > tMax)
+      tMax = temp;
+    if (temp < tMin)
+      tMin = temp;
+  }
+}
+
+
+/**
+ * @return The maximum tof value for the list of events->
+ */
+DateAndTime getPulseTimeMax() const {
+  // set up as the minimum available date time.
+  DateAndTime tMax = DateAndTime::minimum();
+
+  // no events is a soft error
+  if (this->empty())
+    return tMax;
+
+  // when events are ordered by pulse time just need the first value
+  if (this->order == PULSETIME_SORT) {
+    return this->events->rbegin()->pulseTime();
+  }
+
+  // now we are stuck with a linear search
+  size_t numEvents = this->events.size();
+  DateAndTime temp = tMax; // start with the smallest possible value
+  for (size_t i = 0; i < numEvents; i++) {
+    temp = this->events[i].pulseTime();
+    if (temp > tMax)
+      tMax = temp;
+  }
+  return tMax;
+}
+
+// --------------------------------------------------------------------------
+/**
+ * @return The minimum tof value for the list of the events->
+ */
+DateAndTime getPulseTimeMin() const {
+  // set up as the maximum available date time.
+  DateAndTime tMin = DateAndTime::maximum();
+
+  // no events is a soft error
+  if (this->empty())
+    return tMin;
+
+  // when events are ordered by pulse time just need the first value
+  if (this->order == PULSETIME_SORT) {
+    return this->events->begin()->pulseTime();
+  }
+
+  // now we are stuck with a linear search
+  DateAndTime temp = tMin; // start with the largest possible value
+  size_t numEvents = this->events.size()();
+  for (size_t i = 0; i < numEvents; i++) {
+    temp = this->events[i].pulseTime();
+    if (temp < tMin)
+      tMin = temp;
+  }
+  return tMin;
+}
+
+/** Get the pulse times of each event in this EventListBase.
+ *
+ * @return by copy a vector of DateAndTime times
+ */
+std::vector<Mantid::Types::Core::DateAndTime> getPulseTimes() const {
+  std::vector<Mantid::Types::Core::DateAndTime> times;
+  // Set the capacity of the vector to avoid multiple resizes
+  times.reserve(this->events.size());
+
+  // Convert the list
+  this->getPulseTimesHelper(*(this->events), times);
+
+  return times;
 }
 
 // --------------------------------------------------------------------------
@@ -96,6 +256,21 @@ void filterByPulseTimeHelper(std::vector<T> &events, DateAndTime start, DateAndT
   }
 }
 
+//------------------------------------------------------------------------------------------------
+/** Use a TimeSplitterType to filter the event list in place.
+ *
+ * @param splitter :: a TimeSplitterType where all the entries (start/end time)
+ *indicate events
+ *     that will be kept. Any other events will be deleted.
+ */
+void filterInPlace(Kernel::TimeSplitterType &splitter) {
+  // Start by sorting the event list by pulse time.
+  this->sortPulseTime();
+
+  // Iterate through all events (sorted by pulse time)
+  filterInPlaceHelper(splitter, this->events);
+   
+}
 
 //------------------------------------------------------------------------------------------------
 /** Perform an in-place filtering on a vector of either TofEvent's or
@@ -171,6 +346,38 @@ void filterInPlaceHelper(Kernel::TimeSplitterType &splitter, typename std::vecto
 }
 
 //------------------------------------------------------------------------------------------------
+/** Split the event list into n outputs
+ *
+ * @param splitter :: a TimeSplitterType giving where to split
+ * @param outputs :: a vector of where the split events will end up. The # of
+ *entries in there should
+ *        be big enough to accommodate the indices.
+ */
+void splitByTime(Kernel::TimeSplitterType &splitter, std::vector<EventListBase *> outputs) const {
+
+
+  // Start by sorting the event list by pulse time.
+  this->sortPulseTime();
+
+  // Initialize all the outputs
+  size_t numOutputs = outputs.size();
+  for (size_t i = 0; i < numOutputs; i++) {
+    outputs[i]->clear();
+    outputs[i]->setDetectorIDs(this->getDetectorIDs());
+    outputs[i]->setHistogram(m_histogram);
+    // Match the output event type.
+    outputs[i]->switchTo(eventType);
+  }
+
+  // Do nothing if there are no entries
+  if (splitter.empty())
+    return;
+
+  splitByTimeHelper(splitter, outputs, this->events);
+
+}
+
+//------------------------------------------------------------------------------------------------
 /** Split the event list into n outputs, operating on a vector of either
  *TofEvent's or WeightedEvent's
  *  Only event's pulse time is used to compare with splitters.
@@ -229,6 +436,33 @@ void splitByTimeHelper(Kernel::TimeSplitterType &splitter, std::vector<EventList
       break;
   }
   // Done!
+}
+
+//----------------------------------------------------------------------------------------------
+/** Split the event list by pulse time
+ */
+void splitByPulseTime(Kernel::TimeSplitterType &splitter, std::map<int, EventListBase *> outputs) const {
+  // Start by sorting the event list by pulse time.
+  this->sortPulseTimeTOF();
+
+  // Initialize all the output event lists
+  std::map<int, EventListBase *>::iterator outiter;
+  for (outiter = outputs.begin(); outiter != outputs.end(); ++outiter) {
+    EventListBase *opeventlist = outiter->second;
+    opeventlist->clear();
+    opeventlist->setDetectorIDs(this->getDetectorIDs());
+    opeventlist->setHistogram(m_histogram);
+    // Match the output event type.
+    opeventlist->switchTo(eventType);
+  }
+
+  // Split
+  if (splitter.empty()) {
+    // No splitter: copy all events to group workspace = -1
+    (*outputs[-1]) = (*this);
+  } else {
+    splitByPulseTimeHelper(splitter, outputs, this->events);    
+  }
 }
 
 //-------------------------------------------
@@ -291,6 +525,37 @@ void splitByPulseTimeHelper(Kernel::TimeSplitterType &splitter, std::map<int, Ev
       break;
   } // END-WHILE Splitter
 }
+
+//----------------------------------------------------------------------------------------------
+/** Split the event list by pulse time
+ */
+// TODO/NOW - TEST
+void splitByPulseTimeWithMatrix(const std::vector<int64_t> &vec_times, const std::vector<int> &vec_target,
+                                           std::map<int, EventListBase *> outputs) const {
+  // Start by sorting the event list by pulse time.
+  this->sortPulseTimeTOF();
+
+  // Initialize all the output event lists
+  std::map<int, EventListBase *>::iterator outiter;
+  for (outiter = outputs.begin(); outiter != outputs.end(); ++outiter) {
+    EventListBase *opeventlist = outiter->second;
+    opeventlist->clear();
+    opeventlist->setDetectorIDs(this->getDetectorIDs());
+    opeventlist->setHistogram(m_histogram);
+    // Match the output event type.
+    opeventlist->switchTo(eventType);
+  }
+
+  // Split
+  if (vec_target.empty()) {
+    // No splitter: copy all events to group workspace = -1
+    (*outputs[-1]) = (*this);
+  } else {
+    // Split
+    splitByPulseTimeWithMatrixHelper(vec_times, vec_target, outputs, this->events);
+  }
+}
+
 
 void splitByPulseTimeWithMatrixHelper(const std::vector<int64_t> &vec_split_times,
                                                  const std::vector<int> &vec_split_target,

@@ -42,6 +42,10 @@ public EventListPermutationsMinusHelperFunctions<TofEventNoTime> {
     void splitByPulseTimeWithMatrix(const std::vector<int64_t> &vec_times, const std::vector<int> &vec_target,
                                            std::map<int, EventListBase *> outputs) const  ;
     EventListTofEventNoTime &operator-=(const EventListBase &more_events);
+
+    // private:
+    //  /// List of Events
+    // std::vector<TofEventNoTime> events;
 };
 
 } // namespace DataObjects

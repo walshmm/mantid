@@ -77,45 +77,6 @@ public:
   bool operator!=(const EventListBase &rhs) const;
   bool equals(const EventListBase &rhs, const double tolTof, const double tolWeight, const int64_t tolPulse) const;
 
-
-  // --------------------------------------------------------------------------
-  /** Append an event to the histogram, without clearing the cache, to make it
-   *faster.
-   * NOTE: Only call this on a un-weighted event list!
-   *
-   * @param event :: TofEvent to add at the end of the list.
-   * */
-  inline void addEventQuickly(const Types::Event::TofEvent &event) {
-    std::vector<Types::Event::TofEvent> *castedVector = std::static_pointer_cast<std::vector<WeightedEventNoTime>>(this->events).get()
-    castedVector->emplace_back(event);
-    this->order = UNSORTED;
-  }
-
-  // --------------------------------------------------------------------------
-  /** Append an event to the histogram, without clearing the cache, to make it
-   * faster.
-   * @param event :: WeightedEvent to add at the end of the list.
-   * */
-  inline void addEventQuickly(const WeightedEvent &event) {
-    std::vector<WeightedEvent> *castedVector = std::static_pointer_cast<std::vector<WeightedEventNoTime>>(this->events).get()
-    castedVector->emplace_back(event);
-    this->order = UNSORTED;
-  }
-
-
-    // NOTE TO SELF:  Move each of these to their respective classes, then no casting will be needed
-
-  // --------------------------------------------------------------------------
-  /** Append an event to the histogram, without clearing the cache, to make it
-   * faster.
-   * @param event :: WeightedEventNoTime to add at the end of the list.
-   * */
-  inline void addEventQuickly(const WeightedEventNoTime &event) {
-    std::vector<WeightedEventNoTime> *castedVector = std::static_pointer_cast<std::vector<WeightedEventNoTime>>(this->events).get()
-    castedVector->emplace_back(event);
-    this->order = UNSORTED;
-  }
-
   Mantid::API::EventType getEventType() const override;
 
   void switchTo(Mantid::API::EventType newType) override;
@@ -322,7 +283,7 @@ private:
   HistogramData::Histogram m_histogram;
 
   /// List of Events
-  std::shared_ptr<std::vector<Types::Event::Event>> events;
+//   std::vector<Types::Event::Event> events;
 
   /// What type of event is in our list.
   Mantid::API::EventType eventType;

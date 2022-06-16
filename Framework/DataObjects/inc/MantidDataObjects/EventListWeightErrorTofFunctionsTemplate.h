@@ -177,6 +177,39 @@ void compressEventsParallelHelper(const std::vector<T> &events, std::vector<Weig
 }
 
 //------------------------------------------------------------------------------------------------
+/** Multiply the weights in this event list by a histogram.
+ * The event list switches to WeightedEvent's if needed.
+ * NOTE: no unit checks are made (or possible to make) to compare the units of X
+ *and tof() in the EventListBase.
+ *
+ * The formula used for calculating the error on the neutron weight is:
+ * \f[ \sigma_{f}^2 = B^2 \sigma_A^2 + A^2 \sigma_B ^ 2  \f]
+ *
+ * where:
+ *  * A is the weight of the event
+ *  * B is the weight of the BIN that the event falls in
+ *  * \f$\sigma_A\f$ is the error (not squared) of the weight of the event
+ *  * \f$\sigma_B\f$ is the error (not squared) of the bin B
+ *  * f is the resulting weight of the multiplied event
+ *
+ * @param X: bins of the multiplying histogram.
+ * @param Y: value to multiply the weights.
+ * @param E: error on the value to multiply.
+ * @throw invalid_argument if the sizes of X, Y, E are not consistent.
+ */
+void multiply(const MantidVec &X, const MantidVec &Y, const MantidVec &E) {
+
+    // Switch to weights if needed.
+    // TODO abstract out to wrapper?
+    this->switchTo(WEIGHTED);
+    // Fall through
+
+    this->sortTof();
+    multiplyHistogramHelper(*(this->events), X, Y, E);
+
+}
+
+//------------------------------------------------------------------------------------------------
 /** Helper method for multiplying an event list by a histogram with error
  *
  * @param events: vector of events (with weights)
@@ -256,6 +289,65 @@ void multiplyHistogramHelper(std::vector<T> &events, const MantidVec &X, const M
     }
     ++itev;
   }
+}
+
+//------------------------------------------------------------------------------------------------
+/** Divide the weights in this event list by a scalar with an (optional) error.
+ * The event list switches to WeightedEvent's if needed.
+ * This simply calls the equivalent function: multiply(1.0/value,
+ *error/(value*value)).
+ *
+ * @param value: divide all weights by this amount.
+ * @param error: error on 'value'. Can be 0.
+ * @throw std::invalid_argument if value == 0; cannot divide by zero.
+ */
+void divide(const double value, const double error) {
+  if (value == 0.0)
+    throw std::invalid_argument("EventListBase::divide() called with value of 0.0. Cannot divide by zero.");
+  // Do nothing if dividing by exactly 1.0, no error
+  else if (value == 1.0 && error == 0.0)
+    return;
+
+  // We'll multiply by 1/value
+  double invValue = 1.0 / value;
+  // Relative error remains the same
+  double invError = (error / value) * invValue;
+
+  this->multiply(invValue, invError);
+}
+
+
+//------------------------------------------------------------------------------------------------
+/** Divide the weights in this event list by a histogram.
+ * The event list switches to WeightedEvent's if needed.
+ * NOTE: no unit checks are made (or possible to make) to compare the units of X
+ *and tof() in the EventListBase.
+ *
+ * The formula used for calculating the error on the neutron weight is:
+ * \f[ \sigma_{f}^2 = (A / B)^2 * (\sigma_A^2 / A^2 + \sigma_B^2 / B^2) \f]
+ *
+ * where:
+ *  * A is the weight of the event
+ *  * B is the weight of the BIN that the event falls in
+ *  * \f$\sigma_A\f$ is the error (not squared) of the weight of the event
+ *  * \f$\sigma_B\f$ is the error (not squared) of the bin B
+ *  * f is the resulting weight of the divided event
+ *
+ *
+ * @param X: bins of the multiplying histogram.
+ * @param Y: value to multiply the weights.
+ * @param E: error on the value to multiply.
+ * @throw invalid_argument if the sizes of X, Y, E are not consistent.
+ */
+void divide(const MantidVec &X, const MantidVec &Y, const MantidVec &E) {
+    // Switch to weights if needed.
+    // TODO abstract out to wrapper?
+    this->switchTo(WEIGHTED);
+    // Fall through
+
+  this->sortTof();
+  divideHistogramHelper(*(this->events), X, Y, E);
+    
 }
 
 //------------------------------------------------------------------------------------------------

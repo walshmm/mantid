@@ -22,6 +22,16 @@ class DLLExport EventListTofEvent : public EventListBase, public EventListWeight
                                               const double &tofOffset, bool skipError)  ;
     void generateHistogramPulseTime(const MantidVec &X, MantidVec &Y, MantidVec &E, bool skipError) const  ;
     EventListTofEvent &operator-=(const EventListBase &more_events);
+    void generateCountsHistogramPulseTime(const MantidVec &X, MantidVec &Y) const; 
+    void generateCountsHistogramPulseTime(const double &xMin, const double &xMax, MantidVec &Y,
+                                                 const double TOF_min, const double TOF_max) const;
+    void generateCountsHistogramTimeAtSample(const MantidVec &X, MantidVec &Y, const double &tofFactor,
+                                                    const double &tofOffset) const;
+    void generateCountsHistogram(const MantidVec &X, MantidVec &Y) const;
+    private:
+    /// List of Events
+    // std::vector<Types::Event::TofEvent> events;
+    // Declared in EventListBaseFunctionsTemplate
 };
 
 } // namespace DataObjects

@@ -279,25 +279,6 @@ private:
   const HistogramData::Histogram &histogramRef() const override { return m_histogram; }
   HistogramData::Histogram &mutableHistogramRef() override;
 
-  /// Histogram object holding the histogram data. Currently only X.
-  HistogramData::Histogram m_histogram;
-
-  /// List of Events
-//   std::vector<Types::Event::Event> events;
-
-  /// What type of event is in our list.
-  Mantid::API::EventType eventType;
-
-  /// Last sorting order
-  mutable EventSortType order;
-
-  /// MRU lists of the parent EventWorkspace
-  mutable EventWorkspaceMRU *mru;
-
-  /// Mutex that is locked while sorting an event list
-  mutable std::mutex m_sortMutex;
-
-  
 
   template <class T>
   static typename std::vector<T>::const_iterator findFirstPulseEvent(const std::vector<T> &events,

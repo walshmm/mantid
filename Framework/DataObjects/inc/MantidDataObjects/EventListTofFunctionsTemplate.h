@@ -3,10 +3,11 @@
 
 namespace Mantid {
 namespace DataObjects {
-template <typename T>
-class EventListTofFunctionsTemplate : public EventListBaseFunctionsTemplate<T>
+template <typename T, typename SELF>
+class EventListTofFunctionsTemplate : public EventListBaseFunctionsTemplate<T, SELF>
 {
   public:
+  
   void sort(const EventSortType order) const {
     if (order == UNSORTED) {
       return; // don't bother doing anything. Why did you ask to unsort?

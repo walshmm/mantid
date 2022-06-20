@@ -261,7 +261,28 @@ EventType EventList::getEventType() const { return this->eventList->getEventType
  * WEIGHTED_NOTIME)
  */
 void EventList::switchTo(EventType newType) {
-  this->eventList->switchTo(newType);
+  //TODO: may be a nessessary evil, will think of a way to remove this another time
+  switch (newType) {
+  case TOF:
+    if (eventType != TOF)
+      throw std::runtime_error("EventListBase::switchTo() called on an EventListBase "
+                               "with weights to go down to TofEvent's. This "
+                               "would remove weight information and therefore "
+                               "is not possible.");
+    break;
+
+  case WEIGHTED:
+    switchToWeightedEvents();
+    break;
+
+  case WEIGHTED_NOTIME:
+    switchToWeightedEventsNoTime();
+    break;
+
+  case UNWEIGHTED:
+    switchToUnweightedEvents();
+    break;
+  }
 }
 
 

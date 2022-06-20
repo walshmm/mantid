@@ -3,8 +3,8 @@
 
 namespace Mantid {
 namespace DataObjects {
-template <typename T>
-class EventListWeightErrorPulsetimeTofFunctionsTemplate : public EventListWeightErrorTofFunctionsTemplate<T>, public EventListPulsetimeTofFunctionsTemplate<T>
+template <typename T, typename SELF>
+class EventListWeightErrorPulsetimeTofFunctionsTemplate : public EventListWeightErrorTofFunctionsTemplate<T, SELF>, public EventListPulsetimeTofFunctionsTemplate<T, SELF>
 {
   
 

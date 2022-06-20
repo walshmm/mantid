@@ -3,8 +3,8 @@
 
 namespace Mantid {
 namespace DataObjects {
-template <typename T>
-class EventListErrorFunctionsTemplate : public EventListBaseFunctionsTemplate<T>
+template <typename T, typename SELF>
+class EventListErrorFunctionsTemplate : public EventListBaseFunctionsTemplate<T, SELF>
 {
   
 

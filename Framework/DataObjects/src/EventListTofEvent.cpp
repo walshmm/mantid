@@ -6,6 +6,56 @@ using Types::Core::DateAndTime;
 using Types::Event::TofEvent;
 using namespace Mantid::API;
 
+
+
+/// Constructor (empty)
+// EventWorkspace is always histogram data and so is thus EventListBase
+EventListTofEvent::EventListBase()
+    : m_histogram(HistogramData::Histogram::XMode::BinEdges, HistogramData::Histogram::YMode::Counts), eventType(TOF),
+      order(UNSORTED), mru(nullptr) {}
+
+/** Constructor with a MRU list
+ * @param mru :: pointer to the MRU of the parent EventWorkspace
+ * @param specNo :: the spectrum number for the event list
+ */
+EventListTofEvent::EventListBase(EventWorkspaceMRU *mru, specnum_t specNo)
+    : IEventList(specNo),
+      m_histogram(HistogramData::Histogram::XMode::BinEdges, HistogramData::Histogram::YMode::Counts), eventType(TOF),
+      order(UNSORTED), mru(mru) {}
+
+/** Constructor copying from an existing event list
+ * @param rhs :: EventListBase object to copy*/
+EventListTofEvent::EventListBase(const EventListBase &rhs) : IEventList(rhs), m_histogram(rhs.m_histogram), mru{nullptr} {
+  // Note that operator= also assigns m_histogram, but the above use of the copy
+  // constructor avoid a memory allocation and is thus faster.
+  this->operator=(rhs);
+}
+
+/** Constructor, taking a vector of events->
+ * @param events :: Vector of TofEvent's */
+EventListTofEvent::EventListBase(const std::vector<TofEvent> &events)
+    : m_histogram(HistogramData::Histogram::XMode::BinEdges, HistogramData::Histogram::YMode::Counts), eventType(TOF),
+      mru(nullptr) {
+  this->events->assign(events.begin(), events.end());
+  this->eventType = TOF;
+  this->order = UNSORTED;
+}
+
+/// Destructor
+EventListTofEvent::~EventListBase() {
+  // Note: These two lines do not seem to have an effect on releasing memory
+  //  at least on Linux. (Memory usage seems to increase event after deleting
+  //  EventWorkspaces.
+  //  Therefore, for performance, they are kept commented:
+  
+  
+  clear();
+
+  // this->events->clear();
+  // std::vector<TofEvent>().swap(events); //Trick to release the vector memory.
+}
+
+
 bool EventListTofEvent::equals(const EventListBase &rhs, const double tolTof, const double tolWeight,
                        const int64_t tolPulse) const {
     if (this->getNumberEvents() != rhs.getNumberEvents())

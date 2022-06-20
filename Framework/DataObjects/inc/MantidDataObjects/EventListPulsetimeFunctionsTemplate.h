@@ -3,8 +3,8 @@
 
 namespace Mantid {
 namespace DataObjects {
-template <typename T>
-class EventListPulsetimeFunctionsTemplate : public EventListBaseFunctionsTemplate<T>
+template <typename T, typename SELF>
+class EventListPulsetimeFunctionsTemplate : public EventListBaseFunctionsTemplate<T, SELF>
 {
 public:
 
@@ -13,6 +13,8 @@ void EventListBase::sort(const EventSortType order) const {
     return; // don't bother doing anything. Why did you ask to unsort?
   } else if (order == PULSETIME_SORT) {
     this->sortPulseTime();
+  } else {
+    throw runtime_error("Invalid sort type in EventListPulsetimeFunctionsTemplate::sort(EventSortType)");
   }
 }
 // --------------------------------------------------------------------------

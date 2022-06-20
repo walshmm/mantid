@@ -6,6 +6,38 @@ using Types::Core::DateAndTime;
 using Types::Event::TofEvent;
 using namespace Mantid::API;
 
+/** Constructor copying from an existing event list
+ * @param rhs :: EventListBase object to copy*/
+EventListWeightedEventNoTime::EventListBase(const EventListBase &rhs) : IEventList(rhs), m_histogram(rhs.m_histogram), mru{nullptr} {
+  // Note that operator= also assigns m_histogram, but the above use of the copy
+  // constructor avoid a memory allocation and is thus faster.
+  this->operator=(rhs);
+}
+
+/** Constructor, taking a vector of events->
+ * @param events :: Vector of WeightedEventNoTime's */
+EventListWeightedEventNoTime::EventListBase(const std::vector<WeightedEventNoTime> &events)
+    : m_histogram(HistogramData::Histogram::XMode::BinEdges, HistogramData::Histogram::YMode::Counts), mru(nullptr) {
+  this->events->assign(events.begin(), events.end());
+  this->eventType = WEIGHTED_NOTIME;
+  this->order = UNSORTED;
+}
+
+/// Destructor
+EventListWeightedEventNoTime::~EventListBase() {
+  // Note: These two lines do not seem to have an effect on releasing memory
+  //  at least on Linux. (Memory usage seems to increase event after deleting
+  //  EventWorkspaces.
+  //  Therefore, for performance, they are kept commented:
+  
+  
+  clear();
+
+  // this->events->clear();
+  // std::vector<TofEvent>().swap(events); //Trick to release the vector memory.
+}
+
+
 bool EventListWeightedEventNoTime::equals(const EventListBase &rhs, const double tolTof, const double tolWeight,
                        const int64_t tolPulse) const {
     if (this->getNumberEvents() != rhs.getNumberEvents())
@@ -68,13 +100,13 @@ void EventListWeightedEventNoTime::generateHistogram(const MantidVec &X, MantidV
 }
 
 void EventListWeightedEventNoTime::addPulsetime(const double seconds) {
-    throw std::runtime_error("EventListBase::addPulsetime() called on an event "
+    throw std::runtime_error("EventListWeightedEventNoTime::addPulsetime() called on an event "
                              "list with no pulse times. You must call this "
                              "algorithm BEFORE CompressEvents.");
 }
 
 void EventListWeightedEventNoTime::addPulsetimes(const std::vector<double> &seconds) {
-    throw std::runtime_error("EventListBase::addPulsetime() called on an event "
+    throw std::runtime_error("EventListWeightedEventNoTime::addPulsetime() called on an event "
                              "list with no pulse times. You must call this "
                              "algorithm BEFORE CompressEvents.");
 }
@@ -91,31 +123,31 @@ void EventListWeightedEventNoTime::getWeightErrors(std::vector<double> &weightEr
 }
 
 void EventListWeightedEventNoTime::filterByPulseTime(Types::Core::DateAndTime start, Types::Core::DateAndTime stop, EventListBase &output) const {
-    throw std::runtime_error("EventListBase::filterByTimeAtSample() called on an "
+    throw std::runtime_error("EventListWeightedEventNoTime::filterByTimeAtSample() called on an "
                              "EventListBase that no longer has full time "
                              "information.");
 }
 
 void EventListWeightedEventNoTime::filterByTimeAtSample(Types::Core::DateAndTime start, Types::Core::DateAndTime stop, double tofFactor,
                                      double tofOffset, EventListBase &output) const {
-    throw std::runtime_error("EventListBase::filterByTimeAtSample() called on an "
+    throw std::runtime_error("EventListWeightedEventNoTime::filterByTimeAtSample() called on an "
                              "EventListBase that no longer has full time "
                              "information.");
 }
 
 void EventListWeightedEventNoTime::filterInPlace(Kernel::TimeSplitterType &splitter) {
-    throw std::runtime_error("EventListBase::filterInPlace() called on an "
+    throw std::runtime_error("EventListWeightedEventNoTime::filterInPlace() called on an "
                              "EventListBase that no longer has time information.");
 }
 
 void EventListWeightedEventNoTime::splitByTime(Kernel::TimeSplitterType &splitter, std::vector<EventListBase *> outputs) const {
-    throw std::runtime_error("EventListBase::splitByTime() called on an EventListBase "
+    throw std::runtime_error("EventListWeightedEventNoTime::splitByTime() called on an EventListBase "
                              "that no longer has time information.");
 }
 
 void EventListWeightedEventNoTime::splitByFullTime(Kernel::TimeSplitterType &splitter, std::map<int, EventListBase *> outputs,
                                 bool docorrection, double toffactor, double tofshift) const {
-    throw std::runtime_error("EventListBase::splitByTime() called on an EventListBase "
+    throw std::runtime_error("EventListWeightedEventNoTime::splitByTime() called on an EventListBase "
                              "that no longer has time information.");
 }
 
@@ -123,18 +155,18 @@ std::string EventListWeightedEventNoTime::splitByFullTimeMatrixSplitter(const st
                                                      const std::vector<int> &vecgroups,
                                                      std::map<int, EventListBase *> vec_outputEventList, bool docorrection,
                                                      double toffactor, double tofshift) const {
-    throw std::runtime_error("EventListBase::splitByTime() called on an EventListBase "
+    throw std::runtime_error("EventListWeightedEventNoTime::splitByTime() called on an EventListBase "
                              "that no longer has time information.");                                                     
 }
 
 void EventListWeightedEventNoTime::splitByPulseTime(Kernel::TimeSplitterType &splitter, std::map<int, EventListBase *> outputs) const {
-    throw std::runtime_error("EventListBase::splitByTime() called on an EventListBase "
+    throw std::runtime_error("EventListWeightedEventNoTime::splitByTime() called on an EventListBase "
                              "that no longer has time information.");
 }
 
 void EventListWeightedEventNoTime::splitByPulseTimeWithMatrix(const std::vector<int64_t> &vec_times, const std::vector<int> &vec_target,
                                            std::map<int, EventListBase *> outputs) const {
-    throw std::runtime_error("EventListBase::splitByTime() called on an EventListBase "
+    throw std::runtime_error("EventListWeightedEventNoTime::splitByTime() called on an EventListBase "
                              "that no longer has time information.");
 }
 

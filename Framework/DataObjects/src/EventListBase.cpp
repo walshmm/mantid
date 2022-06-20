@@ -113,6 +113,8 @@ EventListBase::~EventListBase() {
   //  at least on Linux. (Memory usage seems to increase event after deleting
   //  EventWorkspaces.
   //  Therefore, for performance, they are kept commented:
+  
+  
   clear();
 
   // this->events->clear();
@@ -120,18 +122,15 @@ EventListBase::~EventListBase() {
 }
 
 /// Copy data from another EventListBase, via ISpectrum reference.
-void EventListBase::copyDataFrom(const ISpectrum &source) { source.copyDataInto(*this); }
+void EventListBase::copyDataFrom(const ISpectrum &source) { throwUnimplementedError() }
 
 /// Used by copyDataFrom for dynamic dispatch for its `source`.
 void EventListBase::copyDataInto(EventListBase &sink) const {
-  sink.m_histogram = m_histogram;
-  sink.events = events;
-  sink.eventType = eventType;
-  sink.order = order;
+  throwUnimplementedError();
 }
 
 /// Used by Histogram1D::copyDataFrom for dynamic dispatch for `other`.
-void EventListBase::copyDataInto(Histogram1D &sink) const { sink.setHistogram(histogram()); }
+void EventListBase::copyDataInto(Histogram1D &sink) const { throwUnimplementedError(); }
 
 // --------------------------------------------------------------------------
 /** Create an EventListBase from a histogram. This converts bins to weighted
@@ -147,73 +146,7 @@ void EventListBase::copyDataInto(Histogram1D &sink) const { sink.setHistogram(hi
  */
 void EventListBase::createFromHistogram(const ISpectrum *inSpec, bool GenerateZeros, bool GenerateMultipleEvents,
                                     int MaxEventsPerBin) {
-  // Fresh start
-  this->clear(true);
-  // Get the input histogram
-  const MantidVec &X = inSpec->readX();
-  const MantidVec &Y = inSpec->readY();
-  const MantidVec &E = inSpec->readE();
-  if (Y.size() + 1 != X.size())
-    throw std::runtime_error("Expected a histogram (X vector should be 1 longer than the Y vector)");
-
-  // Copy detector IDs and spectra
-  this->copyInfoFrom(*inSpec);
-  // We need weights but have no way to set the time. So use weighted, no time
-  this->switchTo(WEIGHTED_NOTIME);
-  if (GenerateZeros)
-    this->events->reserve(Y.size());
-
-  for (size_t i = 0; i < X.size() - 1; i++) {
-    double weight = Y[i];
-    if ((weight != 0.0 || GenerateZeros) && std::isfinite(weight)) {
-      double error = E[i];
-      // Also check that the error is not a bad number
-      if (std::isfinite(error)) {
-        if (GenerateMultipleEvents) {
-          // --------- Multiple events per bin ----------
-          double errorSquared = error * error;
-          // Find how many events to fake
-          double val = weight / E[i];
-          val *= val;
-          // Convert to int with slight rounding up. This is to avoid rounding
-          // errors
-          auto numEvents = int(val + 0.2);
-          if (numEvents < 1)
-            numEvents = 1;
-          if (numEvents > MaxEventsPerBin)
-            numEvents = MaxEventsPerBin;
-          // Scale the weight and error for each
-          weight /= numEvents;
-          errorSquared /= numEvents;
-
-          // Spread the TOF. e.g. 2 events = 0.25, 0.75.
-          double tofStep = (X[i + 1] - X[i]) / (numEvents);
-          for (size_t j = 0; j < size_t(numEvents); j++) {
-            double tof = X[i] + tofStep * (0.5 + double(j));
-            // Create and add the event
-            // TODO: try emplace_back() here.
-            events->emplace_back(tof, weight, errorSquared);
-          }
-        } else {
-          // --------- Single event per bin ----------
-          // TOF = midpoint of the bin
-          double tof = (X[i] + X[i + 1]) / 2.0;
-          // Error squared is carried in the event
-          double errorSquared = E[i];
-          errorSquared *= errorSquared;
-          // Create and add the event
-          events->emplace_back(tof, weight, errorSquared);
-        }
-      } // error is nont NAN or infinite
-    }   // weight is non-zero, not NAN, and non-infinite
-  }     // (each bin)
-
-  // Set the X binning parameters
-  this->setX(inSpec->ptrX());
-
-  // Manually set that this is sorted by TOF, since it is. This will make it
-  // "threadSafe" in other algos.
-  this->setSortOrder(TOF_SORT);
+  throwUnimplementedError();
 }
 
 // --------------------------------------------------------------------------
@@ -225,14 +158,7 @@ void EventListBase::createFromHistogram(const ISpectrum *inSpec, bool GenerateZe
  * @return reference to this
  * */
 EventListBase &EventListBase::operator=(const EventListBase &rhs) {
-  // Note that we are NOT copying the MRU pointer
-  // the EventWorkspace that posseses the EventListBase has already configured the mru
-  IEventList::operator=(rhs);
-  m_histogram = rhs.m_histogram;
-  events = rhs.events;
-  eventType = rhs.eventType;
-  order = rhs.order;
-  return *this;
+ throwUnimplementedError();
 }
 
 // --------------------------------------------------------------------------
@@ -241,9 +167,7 @@ EventListBase &EventListBase::operator=(const EventListBase &rhs) {
  * @return reference to this
  * */
 EventListBase &EventListBase::operator+=(const TofEvent &event) {
-  this->events->emplace_back(event);
-  this->order = UNSORTED;
-  return *this;
+  throwUnimplementedError();
 }
 
 // --------------------------------------------------------------------------
@@ -254,19 +178,7 @@ EventListBase &EventListBase::operator+=(const TofEvent &event) {
  * @return reference to this
  * */
 EventListBase &EventListBase::operator+=(const std::vector<TofEvent> &more_events) {
-
-  // case TOF:
-  //   // Simply push the events
-  //   this->events->insert(this->events->end(), more_events->begin(), more_events->end());
-  //   break;
-
-  this->events->reserve(this->events->size() + more_events->size());
-  for (const auto &event : more_events) {
-    this->events->emplace_back(event);
-  }
-
-  this->order = UNSORTED;
-  return *this;
+  throwUnimplementedError();
 }
 
 // --------------------------------------------------------------------------
@@ -278,10 +190,7 @@ EventListBase &EventListBase::operator+=(const std::vector<TofEvent> &more_event
  * @return reference to this
  * */
 EventListBase &EventListBase::operator+=(const WeightedEvent &event) {
-  this->switchTo(WEIGHTED);
-  this->events->emplace_back(event);
-  this->order = UNSORTED;
-  return *this;
+  throwUnimplementedError();
 }
 
 // --------------------------------------------------------------------------
@@ -306,14 +215,7 @@ EventListBase &EventListBase::operator+=(const std::vector<WeightedEvent> &more_
   //   // Append the two lists
   //   this->weightedevents->insert(weightedevents->end(), more_events->begin(), more_events->end());
   //   break;
-  this->events->reserve(this->events->size() + more_events->size());
-  for (const auto &event : more_events) {
-    this->events->emplace_back(event);
-  }
-
-
-  this->order = UNSORTED;
-  return *this;
+  throwUnimplementedError();
 }
 
 // --------------------------------------------------------------------------
@@ -333,9 +235,7 @@ EventListBase &EventListBase::operator+=(const std::vector<WeightedEventNoTime> 
   //   this->switchTo(WEIGHTED_NOTIME);
   //   // Fall through to the insertion!
 
-  this->events->insert(events->end(), more_events->begin(), more_events->end());
-  this->order = UNSORTED;
-  return *this;
+  throwUnimplementedError();
 }
 
 // --------------------------------------------------------------------------
@@ -348,16 +248,7 @@ EventListBase &EventListBase::operator+=(const std::vector<WeightedEventNoTime> 
  * @return reference to this
  * */
 EventListBase &EventListBase::operator+=(const EventListBase &more_events) {
-  // We'll let the += operator for the given vector of event lists handle it
-  this->operator+=(more_events->events);
-
-
-  // No guaranteed order
-  this->order = UNSORTED;
-  // Do a union between the detector IDs of both lists
-  addDetectorIDs(more_events->getDetectorIDs());
-
-  return *this;
+  throwUnimplementedError();
 }
 
 // --------------------------------------------------------------------------
@@ -366,9 +257,8 @@ EventListBase &EventListBase::operator+=(const EventListBase &more_events) {
  * @return :: true if equal.
  */
 bool EventListBase::operator==(const EventListBase &rhs) const {
-  return this->getNumberEvents() == rhs.getNumberEvents()
-  && this->eventType == rhs.eventType
-  && *events == *(rhs.events);
+  //should go to the more specific == opertator if of the same type
+  return false;
 }
 
 /** Inequality comparator
@@ -392,7 +282,7 @@ bool EventListBase::equals(const EventListBase &rhs, const double tolTof, const 
 /** Return the type of Event vector contained within.
  * @return :: a EventType value.
  */
-EventType EventListBase::getEventType() const { return eventType; }
+EventType EventListBase::getEventType() const { throwUnimplementedError();}
 
 // -----------------------------------------------------------------------------------------------
 /** Switch the EventListBase to use the given EventType (TOF, WEIGHTED, or
@@ -402,29 +292,7 @@ EventType EventListBase::getEventType() const { return eventType; }
 
 // TODO: Extract out to wrapper
 void EventListBase::switchTo(EventType newType) {
-  switch (newType) {
-  case TOF:
-    if (eventType != TOF)
-      throw std::runtime_error("EventListBase::switchTo() called on an EventListBase "
-                               "with weights to go down to TofEvent's. This "
-                               "would remove weight information and therefore "
-                               "is not possible.");
-    break;
-
-  case WEIGHTED:
-    switchToWeightedEvents();
-    break;
-
-  case WEIGHTED_NOTIME:
-    switchToWeightedEventsNoTime();
-    break;
-
-  case UNWEIGHTED:
-    switchToUnweightedEvents();
-    break;
-  }
-  // Make sure to free memory
-  this->clearUnused();
+  throwUnimplementedError();
 }
 
 // -----------------------------------------------------------------------------------------------
@@ -432,31 +300,7 @@ void EventListBase::switchTo(EventType newType) {
  * of TofEvent.
  */
 void EventListBase::switchToWeightedEvents() {
-  switch (eventType) {
-  case WEIGHTED:
-    // Do nothing; it already is weighted
-    return;
-
-  case WEIGHTED_NOTIME:
-    throw std::runtime_error("EventListBase::switchToWeightedEvents() called on an "
-                             "EventListBase with WeightedEventNoTime's. It has "
-                             "lost the pulse time information and can't go "
-                             "back to WeightedEvent's.");
-    break;
-
-  case UNWEIGHTED:
-    throw std::runtime_error("TestTestTestTest");
-    break;
-
-  case TOF:
-    weightedEventsNoTime.clear();
-    // Convert and copy all TofEvents to the weightedEvents list.
-    this->weightedevents->assign(events->cbegin(), events->cend());
-    // Get rid of the old events
-    events->clear();
-    eventType = WEIGHTED;
-    break;
-  }
+  throwUnimplementedError();
 }
 
 // -----------------------------------------------------------------------------------------------
@@ -464,38 +308,7 @@ void EventListBase::switchToWeightedEvents() {
  * of TofEvent.
  */
 void EventListBase::switchToWeightedEventsNoTime() {
-  switch (eventType) {
-  case WEIGHTED_NOTIME:
-    // Do nothing if already there
-    return;
-
-  case TOF: {
-    // Convert and copy all TofEvents to the weightedEvents list.
-    this->weightedEventsNoTime.assign(events->cbegin(), events->cend());
-    // Get rid of the old events
-    events->clear();
-    weightedevents->clear();
-    eventType = WEIGHTED_NOTIME;
-  } break;
-
-  case WEIGHTED: {
-    // Convert and copy all TofEvents to the weightedEvents list.
-    this->weightedEventsNoTime.assign(weightedevents->cbegin(), weightedevents->cend());
-    // Get rid of the old events
-    events->clear();
-    weightedevents->clear();
-    eventType = WEIGHTED_NOTIME;
-  } break;
-
-  case UNWEIGHTED: {
-    // Convert and copy all TofEvents to the unweightedEvents list.
-    this->unweightedevents->assign(unweightedevents->cbegin(), unweightedevents->cend());
-    // Get rid of the old events
-    events->clear();
-    unweightedevents->clear();
-    eventType = UNWEIGHTED;
-  } break;
-  }
+  throwUnimplementedError();
 }
 
 // ==============================================================================================
@@ -526,11 +339,7 @@ WeightedEvent EventListBase::getEvent(size_t event_number) {
  * @return a const reference to the list of non-weighted events
  * */
 const std::vector<TofEvent> &EventListBase::getEvents() const {
-  if (eventType != TOF)
-    throw std::runtime_error("EventListBase::getEvents() called for an EventListBase "
-                             "that has weights. Use getWeightedEvents() or "
-                             "getWeightedEventsNoTime().");
-  return this->events;
+  throwUnimplementedError();
 }
 
 /** Return the list of TofEvents contained.
@@ -541,11 +350,7 @@ const std::vector<TofEvent> &EventListBase::getEvents() const {
  * @return a reference to the list of non-weighted events
  * */
 std::vector<TofEvent> &EventListBase::getEvents() {
-  if (eventType != TOF)
-    throw std::runtime_error("EventListBase::getEvents() called for an EventListBase "
-                             "that has weights. Use getWeightedEvents() or "
-                             "getWeightedEventsNoTime().");
-  return this->events;
+  throwUnimplementedError();
 }
 
 // std::vector<Event> &EventListBase::getEventsTyped() {
@@ -564,11 +369,7 @@ std::vector<TofEvent> &EventListBase::getEvents() {
  * @return a reference to the list of weighted events
  * */
 std::vector<WeightedEvent> &EventListBase::getWeightedEvents() {
-  if (eventType != WEIGHTED)
-    throw std::runtime_error("EventListBase::getWeightedEvents() called for an "
-                             "EventListBase not of type WeightedEvent. Use "
-                             "getEvents() or getWeightedEventsNoTime().");
-  return this->events;
+  throwUnimplementedError();
 }
 
 /** Return the list of WeightedEvent contained.
@@ -579,11 +380,7 @@ std::vector<WeightedEvent> &EventListBase::getWeightedEvents() {
  * @return a const reference to the list of weighted events
  * */
 const std::vector<WeightedEvent> &EventListBase::getWeightedEvents() const {
-  if (eventType != WEIGHTED)
-    throw std::runtime_error("EventListBase::getWeightedEvents() called for an "
-                             "EventListBase not of type WeightedEvent. Use "
-                             "getEvents() or getWeightedEventsNoTime().");
-  return this->events;
+  throwUnimplementedError();
 }
 
 /** Return the list of WeightedEvent contained.
@@ -592,11 +389,7 @@ const std::vector<WeightedEvent> &EventListBase::getWeightedEvents() const {
  * @return a reference to the list of weighted events
  * */
 std::vector<WeightedEventNoTime> &EventListBase::getWeightedEventsNoTime() {
-  if (eventType != WEIGHTED_NOTIME)
-    throw std::runtime_error("EventListBase::getWeightedEvents() called for an "
-                             "EventListBase not of type WeightedEventNoTime. Use "
-                             "getEvents() or getWeightedEvents().");
-  return this->events;
+  throwUnimplementedError();
 }
 
 // /** Return the list of WeightedEvent contained.
@@ -618,24 +411,14 @@ std::vector<WeightedEventNoTime> &EventListBase::getWeightedEventsNoTime() {
  * @return a const reference to the list of weighted events
  * */
 const std::vector<WeightedEventNoTime> &EventListBase::getWeightedEventsNoTime() const {
-  if (eventType != WEIGHTED_NOTIME)
-    throw std::runtime_error("EventListBase::getWeightedEventsNoTime() called for "
-                             "an EventListBase not of type WeightedEventNoTime. "
-                             "Use getEvents() or getWeightedEvents().");
-  return this->events;
+  throwUnimplementedError();
 }
 
 /** Clear the list of events and any
  * associated detector ID's.
  * */
 void EventListBase::clear(const bool removeDetIDs) {
-  // TODO: Continue refactor here
-  if (mru)
-    mru->deleteIndex(this);
-  this->events.clear();
-  std::vector<Event>().swap(this->events); // STL Trick to release memory
-  if (removeDetIDs)
-    this->clearDetectorIDs();
+  throwUnimplementedError();
 }
 
 /** Clear any unused event lists (the ones that do not
@@ -654,7 +437,7 @@ void EventListBase::clearData() { throwUnimplementedError(); }
  *
  * @param newMRU :: new MRU for the workspace containing this EventListBase
  */
-void EventListBase::setMRU(EventWorkspaceMRU *newMRU) { mru = newMRU; }
+void EventListBase::setMRU(EventWorkspaceMRU *newMRU) {throwUnimplementedError(); }
 
 /** Reserve a certain number of entries in event list of the specified eventType
  *
@@ -684,7 +467,7 @@ void EventListBase::sort(const EventSortType order) const {
  * SHOULD ONLY BE USED IN TESTS or if you know what you are doing.
  * @param order :: sort order to set.
  */
-void EventListBase::setSortOrder(const EventSortType order) const { this->order = order; }
+void EventListBase::setSortOrder(const EventSortType order) const {  throwUnimplementedError() }
 
 // --------------------------------------------------------------------------
 /** Sort events by TOF in one thread */
@@ -708,11 +491,11 @@ void EventListBase::sortTimeAtSample(const double &tofFactor, const double &tofS
 
 // --------------------------------------------------------------------------
 /** Return true if the event list is sorted by TOF */
-bool EventListBase::isSortedByTof() const { return (this->order == TOF_SORT); }
+bool EventListBase::isSortedByTof() const { throwUnimplementedError(); }
 
 // --------------------------------------------------------------------------
 /** Return the type of sorting used in this event list */
-EventSortType EventListBase::getSortType() const { return this->order; }
+EventSortType EventListBase::getSortType() const { throwUnimplementedError(); }
 
 // --------------------------------------------------------------------------
 /** Reverse the histogram boundaries and the associated events if they are
@@ -721,16 +504,7 @@ EventSortType EventListBase::getSortType() const { return this->order; }
  * Does nothing if sorted otherwise or unsorted.
  * */
 void EventListBase::reverse() {
-  // reverse the histogram bin parameters
-  MantidVec &x = dataX();
-  std::reverse(x.begin(), x.end());
-
-  // flip the events if they are tof sorted
-  if (this->isSortedByTof()) {
-    std::reverse(this->events->begin(), this->events->end());
-    // And we are still sorted! :)
-  }
-  // Otherwise, do nothing. If it was sorted by pulse time, then it still is
+  throwUnimplementedError();
 }
 
 // --------------------------------------------------------------------------
@@ -742,14 +516,14 @@ void EventListBase::reverse() {
  * @return the number of events in the list.
  *  */
 size_t EventListBase::getNumberEvents() const {
-    return this->events->size();
+    throwUnimplementedError();
 }
 
 /**
  * Much like stl containers, returns true if there is nothing in the event list.
  */
 bool EventListBase::empty() const {
-  return this->events->empty();
+  throwUnimplementedError();
 }
 
 // --------------------------------------------------------------------------
@@ -767,11 +541,7 @@ size_t EventListBase::getMemorySize() const {
 /** Return the size of the histogram data.
  * @return the size of the histogram representation of the data (size of Y) **/
 size_t EventListBase::histogram_size() const {
-  size_t x_size = readX().size();
-  if (x_size > 1)
-    return x_size - 1;
-  else
-    return 0;
+  throwUnimplementedError();
 }
 
 // ==============================================================================================
@@ -784,36 +554,32 @@ size_t EventListBase::histogram_size() const {
  * @param X :: The vector of doubles to set as the histogram limits.
  */
 void EventListBase::setX(const Kernel::cow_ptr<HistogramData::HistogramX> &X) {
-  m_histogram.setX(X);
-  if (mru)
-    mru->deleteIndex(this);
+  throwUnimplementedError();;
 }
 
 /** Deprecated, use mutableX() instead. Returns a reference to the x data.
  *  @return a reference to the X (bin) vector.
  */
 MantidVec &EventListBase::dataX() {
-  if (mru)
-    mru->deleteIndex(this);
-  return m_histogram.dataX();
+  throwUnimplementedError();
 }
 
 /** Deprecated, use x() instead. Returns a const reference to the x data.
  *  @return a reference to the X (bin) vector. */
-const MantidVec &EventListBase::dataX() const { return m_histogram.dataX(); }
+const MantidVec &EventListBase::dataX() const { throwUnimplementedError(); }
 
 /// Deprecated, use x() instead. Returns the x data const
-const MantidVec &EventListBase::readX() const { return m_histogram.readX(); }
+const MantidVec &EventListBase::readX() const { throwUnimplementedError(); }
 
 /// Deprecated, use sharedX() instead. Returns a pointer to the x data
-Kernel::cow_ptr<HistogramData::HistogramX> EventListBase::ptrX() const { return m_histogram.ptrX(); }
+Kernel::cow_ptr<HistogramData::HistogramX> EventListBase::ptrX() const { throwUnimplementedError(); }
 
 /// Deprecated, use mutableDx() instead.
-MantidVec &EventListBase::dataDx() { return m_histogram.dataDx(); }
+MantidVec &EventListBase::dataDx() { throwUnimplementedError(); }
 /// Deprecated, use dx() instead.
-const MantidVec &EventListBase::dataDx() const { return m_histogram.dataDx(); }
+const MantidVec &EventListBase::dataDx() const { throwUnimplementedError(); }
 /// Deprecated, use dx() instead.
-const MantidVec &EventListBase::readDx() const { return m_histogram.readDx(); }
+const MantidVec &EventListBase::readDx() const { throwUnimplementedError(); }
 
 // ==============================================================================================
 // --- Return Data Vectors --------------------------------------------------
@@ -825,11 +591,7 @@ const MantidVec &EventListBase::readDx() const { return m_histogram.readDx(); }
  * @return a pointer to a MantidVec
  */
 MantidVec *EventListBase::makeDataY() const {
-  auto Y = new MantidVec();
-  MantidVec E;
-  // Generate the Y histogram while skipping the E if possible.
-  generateHistogram(readX(), *Y, E, true);
-  return Y;
+  throwUnimplementedError();
 }
 
 /** Calculates and returns a pointer to the E histogrammed data.
@@ -838,102 +600,40 @@ MantidVec *EventListBase::makeDataY() const {
  * @return a pointer to a MantidVec
  */
 MantidVec *EventListBase::makeDataE() const {
-  MantidVec Y;
-  auto E = new MantidVec();
-  generateHistogram(readX(), Y, *E);
-  // Y is unused.
-  return E;
+  throwUnimplementedError();
 }
 
 HistogramData::Histogram EventListBase::histogram() const {
-  HistogramData::Histogram ret(m_histogram);
-  ret.setSharedY(sharedY());
-  ret.setSharedE(sharedE());
-  return ret;
+ throwUnimplementedError();
 }
 
-HistogramData::Counts EventListBase::counts() const { return histogram().counts(); }
+HistogramData::Counts EventListBase::counts() const { throwUnimplementedError(); }
 
-HistogramData::CountVariances EventListBase::countVariances() const { return histogram().countVariances(); }
+HistogramData::CountVariances EventListBase::countVariances() const { throwUnimplementedError(); }
 
 HistogramData::CountStandardDeviations EventListBase::countStandardDeviations() const {
-  return histogram().countStandardDeviations();
+  throwUnimplementedError();
 }
 
-HistogramData::Frequencies EventListBase::frequencies() const { return histogram().frequencies(); }
+HistogramData::Frequencies EventListBase::frequencies() const { throwUnimplementedError(); }
 
-HistogramData::FrequencyVariances EventListBase::frequencyVariances() const { return histogram().frequencyVariances(); }
+HistogramData::FrequencyVariances EventListBase::frequencyVariances() const { throwUnimplementedError(); }
 
 HistogramData::FrequencyStandardDeviations EventListBase::frequencyStandardDeviations() const {
-  return histogram().frequencyStandardDeviations();
+  throwUnimplementedError();
 }
 
 const HistogramData::HistogramY &EventListBase::y() const {
-  if (!mru)
-    throw std::runtime_error("'EventListBase::y()' called with no MRU set. This is not allowed.");
-
-  return *sharedY();
+throwUnimplementedError();
 }
 const HistogramData::HistogramE &EventListBase::e() const {
-  if (!mru)
-    throw std::runtime_error("'EventListBase::e()' called with no MRU set. This is not allowed.");
-
-  return *sharedE();
+ throwUnimplementedError();
 }
 Kernel::cow_ptr<HistogramData::HistogramY> EventListBase::sharedY() const {
-  // This is the thread number from which this function was called.
-  int thread = PARALLEL_THREAD_NUMBER;
-
-  Kernel::cow_ptr<HistogramData::HistogramY> yData(nullptr);
-
-  // Is the data in the mrulist?
-  if (mru) {
-    mru->ensureEnoughBuffersY(thread);
-    yData = mru->findY(thread, this);
-  }
-
-  if (!yData) {
-    MantidVec Y;
-    MantidVec E;
-    this->generateHistogram(readX(), Y, E);
-
-    // Create the MRU object
-    yData = Kernel::make_cow<HistogramData::HistogramY>(std::move(Y));
-
-    // Lets save it in the MRU
-    if (mru) {
-      mru->insertY(thread, yData, this);
-      auto eData = Kernel::make_cow<HistogramData::HistogramE>(std::move(E));
-      mru->ensureEnoughBuffersE(thread);
-      mru->insertE(thread, eData, this);
-    }
-  }
-  return yData;
+throwUnimplementedError();
 }
 Kernel::cow_ptr<HistogramData::HistogramE> EventListBase::sharedE() const {
-  // This is the thread number from which this function was called.
-  int thread = PARALLEL_THREAD_NUMBER;
-
-  Kernel::cow_ptr<HistogramData::HistogramE> eData(nullptr);
-
-  // Is the data in the mrulist?
-  if (mru) {
-    mru->ensureEnoughBuffersE(thread);
-    eData = mru->findE(thread, this);
-  }
-
-  if (!eData) {
-    // Now use that to get E -- Y values are generated from another function
-    MantidVec Y_ignored;
-    MantidVec E;
-    this->generateHistogram(readX(), Y_ignored, E);
-    eData = Kernel::make_cow<HistogramData::HistogramE>(std::move(E));
-
-    // Lets save it in the MRU
-    if (mru)
-      mru->insertE(thread, eData, this);
-  }
-  return eData;
+throwUnimplementedError();
 }
 /** Look in the MRU to see if the Y histogram has been generated before.
  * If so, return that. If not, calculate, cache and return it.
@@ -941,12 +641,7 @@ Kernel::cow_ptr<HistogramData::HistogramE> EventListBase::sharedE() const {
  * @return reference to the Y vector.
  */
 const MantidVec &EventListBase::dataY() const {
-  if (!mru)
-    throw std::runtime_error("'EventListBase::dataY()' called with no MRU set. This is not allowed.");
-
-  // WARNING: The Y data of sharedY() is stored in MRU, returning reference fine
-  // as long as it stays there.
-  return sharedY()->rawData();
+  throwUnimplementedError();
 }
 
 /** Look in the MRU to see if the E histogram has been generated before.
@@ -955,27 +650,8 @@ const MantidVec &EventListBase::dataY() const {
  * @return reference to the E vector.
  */
 const MantidVec &EventListBase::dataE() const {
-  if (!mru)
-    throw std::runtime_error("'EventListBase::dataE()' called with no MRU set. This is not allowed.");
-
-  // WARNING: The E data of sharedE() is stored in MRU, returning reference fine
-  // as long as it stays there.
-  return sharedE()->rawData();
+  throwUnimplementedError();
 }
-
-namespace {
-inline double calcNorm(const double errorSquared) {
-  if (errorSquared == 0.)
-    return 0;
-  else if (errorSquared == 1.)
-    return 1.;
-  else
-    return 1. / std::sqrt(errorSquared);
-}
-} // namespace
-
-
-
 
 // --------------------------------------------------------------------------
 /** Compress the event list by grouping events with the same
@@ -1046,11 +722,7 @@ void EventListBase::generateHistogramTimeAtSample(const MantidVec &X, MantidVec 
  *        events; you can just ignore the returned E vector.
  */
 void EventListBase::generateHistogram(const MantidVec &X, MantidVec &Y, MantidVec &E, bool skipError) const {
-  // All types of weights need to be sorted by TOF
-  this->sortTof();
-  this->generateCountsHistogram(X, Y);
-  if (!skipError)
-    this->generateErrorsHistogram(Y, E);
+  throwUnimplementedError();
 }
 
 // --------------------------------------------------------------------------
@@ -1061,25 +733,7 @@ void EventListBase::generateHistogram(const MantidVec &X, MantidVec &Y, MantidVe
  * @param Y :: The generated counts histogram
  */
 void EventListBase::generateCountsHistogramPulseTime(const MantidVec &X, MantidVec &Y) const {
-  // For slight speed=up.
-  size_t x_size = X.size();
-
-  if (x_size <= 1) {
-    // X was not set. Return an empty array.
-    Y.resize(0, 0);
-    return;
-  }
-
-  // Sort the events by pulsetime
-  this->sortPulseTime();
-  // Clear the Y data, assign all to 0.
-  Y.resize(x_size - 1, 0);
-
-  //---------------------- Histogram without weights
-  //---------------------------------
-
-  //NOTE:  In the original implementation this only really did stuff for TofEvents? Is that right?
-
+  throwUnimplementedError();
 }
 
 /** With respect to PulseTime fill a histogram given equal histogram
@@ -1098,18 +752,7 @@ void EventListBase::generateCountsHistogramPulseTime(const MantidVec &X, MantidV
  */
 void EventListBase::generateCountsHistogramPulseTime(const double &xMin, const double &xMax, MantidVec &Y,
                                                  const double TOF_min, const double TOF_max) const {
-
-  if (this->events->empty())
-    return;
-
-  size_t nBins = Y.size();
-
-  if (nBins == 0)
-    return;
-
-  double step = (xMax - xMin) / static_cast<double>(nBins);
-
-    //NOTE:  In the original implementation this only really did stuff for TofEvents? Is that right?
+  throwUnimplementedError();
 }
 
 // --------------------------------------------------------------------------
@@ -1123,24 +766,7 @@ void EventListBase::generateCountsHistogramPulseTime(const double &xMin, const d
  */
 void EventListBase::generateCountsHistogramTimeAtSample(const MantidVec &X, MantidVec &Y, const double &tofFactor,
                                                     const double &tofOffset) const {
-  // For slight speed=up.
-  const size_t x_size = X.size();
-
-  if (x_size <= 1) {
-    // X was not set. Return an empty array.
-    Y.resize(0, 0);
-    return;
-  }
-
-  // Sort the events by pulsetime
-  this->sortTimeAtSample(tofFactor, tofOffset);
-  // Clear the Y data, assign all to 0.
-  Y.resize(x_size - 1, 0);
-
-  //---------------------- Histogram without weights
-  //---------------------------------
-
-  //NOTE:  In the original implementation this only really did stuff for TofEvents? Is that right?
+  throwUnimplementedError();
 }
 
 // --------------------------------------------------------------------------
@@ -1150,25 +776,7 @@ void EventListBase::generateCountsHistogramTimeAtSample(const MantidVec &X, Mant
  * @param Y :: The generated counts histogram
  */
 void EventListBase::generateCountsHistogram(const MantidVec &X, MantidVec &Y) const {
-  // For slight speed=up.
-  size_t x_size = X.size();
-
-  if (x_size <= 1) {
-    // X was not set. Return an empty array.
-    Y.resize(0, 0);
-    return;
-  }
-
-  // Sort the events by tof
-  this->sortTof();
-  // Clear the Y data, assign all to 0.
-  Y.resize(x_size - 1, 0);
-
-  //---------------------- Histogram without weights
-  //---------------------------------
-
-  //NOTE:  In the original implementation this only really did stuff for TofEvents? Is that right?
-
+  throwUnimplementedError();
 }
 
 // --------------------------------------------------------------------------
@@ -1180,12 +788,7 @@ void EventListBase::generateCountsHistogram(const MantidVec &X, MantidVec &Y) co
  * @param E :: The generated error histogram
  */
 void EventListBase::generateErrorsHistogram(const MantidVec &Y, MantidVec &E) const {
-  // Fill the vector for the errors, containing sqrt(count)
-  E.resize(Y.size(), 0);
-
-  // windows can get confused about std::sqrt
-  std::transform(Y.begin(), Y.end(), E.begin(), static_cast<double (*)(double)>(sqrt));
-
+  throwUnimplementedError();
 } //----------------------------------------------------------------------------------
 
 // --------------------------------------------------------------------------
@@ -1249,14 +852,14 @@ void convertTof(const double factor, const double offset) {
  * @param factor :: conversion factor (e.g. multiply TOF by this to get
  * d-spacing)
  */
-void EventListBase::scaleTof(const double factor) { this->convertTof(factor, 0.0); }
+void EventListBase::scaleTof(const double factor) { throwUnimplementedError(); }
 
 // --------------------------------------------------------------------------
 /** Add an offset to the TOF of each event in the list.
  *
  * @param offset :: The value to shift the time-of-flight by
  */
-void EventListBase::addTof(const double offset) { this->convertTof(1.0, offset); }
+void EventListBase::addTof(const double offset) { throwUnimplementedError(); }
 
 
 
@@ -1681,24 +1284,11 @@ void EventListBase::convertUnitsQuickly(const double &factor, const double &powe
 }
 
 HistogramData::Histogram &EventListBase::mutableHistogramRef() {
-  if (mru)
-    mru->deleteIndex(this);
-  return m_histogram;
+  throwUnimplementedError();
 }
 
 void EventListBase::checkAndSanitizeHistogram(HistogramData::Histogram &histogram) {
-  if (histogram.xMode() != HistogramData::Histogram::XMode::BinEdges)
-    throw std::runtime_error("EventListBase: setting histogram with storage mode "
-                             "other than BinEdges is not possible");
-  if (histogram.sharedY() || histogram.sharedE())
-    throw std::runtime_error("EventListBase: setting histogram data with non-null "
-                             "Y or E data is not possible");
-  // Avoid flushing of YMode: we only change X but YMode depends on events.
-  if (histogram.yMode() == HistogramData::Histogram::YMode::Uninitialized)
-    histogram.setYMode(m_histogram.yMode());
-  if (histogram.yMode() != m_histogram.yMode())
-    throw std::runtime_error("EventListBase: setting histogram data with different "
-                             "YMode is not possible");
+  throwUnimplementedError();
 }
 
 void EventListBase::checkWorksWithPoints() const {

@@ -15,7 +15,7 @@ namespace DataObjects {
 // Share the same definition of wrapper/interface
 class DLLExport EventListTofEventNoTime : 
 public EventListBase, 
-public EventListTofFunctionsTemplate<TofEventNoTime>,
+public EventListTofFunctionsTemplate<TofEventNoTime, EventListTofEventNoTime>,
 public EventListPermutationsMinusHelperFunctions<TofEventNoTime> {
     bool equals(const EventListBase &rhs, const double tolTof, const double tolWeight,
                        const int64_t tolPulse) const  ;

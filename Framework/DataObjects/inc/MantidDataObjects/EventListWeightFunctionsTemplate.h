@@ -2,8 +2,8 @@
 
 namespace Mantid {
 namespace DataObjects {
-template <typename T>
-class EventListWeightFunctionsTemplate : public EventListBaseFunctionsTemplate<T>
+template <typename T, typename SELF>
+class EventListWeightFunctionsTemplate : public EventListBaseFunctionsTemplate<T, SELF>
 {
   
 

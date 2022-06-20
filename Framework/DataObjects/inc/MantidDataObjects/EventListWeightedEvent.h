@@ -15,7 +15,7 @@ namespace DataObjects {
 // Share the same definition of wrapper/interface
 class DLLExport EventListWeightedEvent : 
 public EventListBase, 
-public EventListWeightErrorPulsetimeTofFunctionsTemplate<WeightedEvent>,
+public EventListWeightErrorPulsetimeTofFunctionsTemplate<WeightedEvent, EventListWeightedEvent>,
 public EventListPermutationsMinusHelperFunctions<WeightedEvent> {
     bool equals(const EventListBase &rhs, const double tolTof, const double tolWeight,
                        const int64_t tolPulse) const  ;

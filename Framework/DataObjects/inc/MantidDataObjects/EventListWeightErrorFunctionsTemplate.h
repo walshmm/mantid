@@ -4,8 +4,8 @@
 
 namespace Mantid {
 namespace DataObjects {
-template <typename T>
-class EventListWeightErrorFunctionsTemplate : public EventListWeightFunctionsTemplate<T>, public EventListErrorFunctionsTemplate<T>
+template <typename T, typename SELF>
+class EventListWeightErrorFunctionsTemplate : public EventListWeightFunctionsTemplate<T, SELF>, public EventListErrorFunctionsTemplate<T, SELF>
 {
   
 

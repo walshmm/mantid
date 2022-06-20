@@ -27,8 +27,8 @@ struct comparePulseTimeTOFDelta {
 
 namespace Mantid {
 namespace DataObjects {
-template <typename T>
-class EventListPulsetimeTofFunctionsTemplate : public EventListPulsetimeFunctionsTemplate<T>, public EventListTofFunctionsTemplate<T>
+template <typename T, typename SELF>
+class EventListPulsetimeTofFunctionsTemplate : public EventListPulsetimeFunctionsTemplate<T, SELF>, public EventListTofFunctionsTemplate<T, SELF>
 {
 public:
 // --------------------------------------------------------------------------

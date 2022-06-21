@@ -1,3 +1,4 @@
+#pragma once
 
 #include "MantidDataObjects/EventListBaseFunctionsTemplate.h"
 
@@ -8,7 +9,11 @@ class EventListPulsetimeFunctionsTemplate : public EventListBaseFunctionsTemplat
 {
 public:
 
-void EventListBase::sort(const EventSortType order) const {
+  EventListPulsetimeFunctionsTemplate(std::shared_ptr<std::vector<T>> events): 
+  EventListBaseFunctionsTemplate<T, SELF>(events){}
+
+
+void sort(const EventSortType order) const {
   if (order == UNSORTED) {
     return; // don't bother doing anything. Why did you ask to unsort?
   } else if (order == PULSETIME_SORT) {
@@ -19,7 +24,7 @@ void EventListBase::sort(const EventSortType order) const {
 }
 // --------------------------------------------------------------------------
 /** Sort events by Frame */
-void EventListBase::sortPulseTime() const {
+void sortPulseTime() const {
   if (this->order == PULSETIME_SORT)
     return; // nothing to do
 
@@ -35,7 +40,7 @@ void EventListBase::sortPulseTime() const {
   this->order = PULSETIME_SORT;
 }
 
-private:
+protected:
 /** Compare two events' FRAME id, return true if e1 should be before e2.
  * @param e1 :: first event
  * @param e2 :: second event
@@ -613,7 +618,7 @@ void splitByPulseTimeWithMatrixHelper(const std::vector<int64_t> &vec_split_time
 }
 
     friend T;
-    EventListPulsetimeFunctionsTemplate() = default;
+    // EventListPulsetimeFunctionsTemplate() = default;
 
     inline T & as_underlying()
     {

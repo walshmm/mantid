@@ -1,3 +1,5 @@
+#pragma once
+
 #include "MantidDataObjects/EventListWeightErrorFunctionsTemplate.h"
 #include "MantidDataObjects/EventListTofFunctionsTemplate.h"
 
@@ -7,9 +9,19 @@ namespace DataObjects {
 template <typename T, typename SELF>
 class EventListWeightErrorTofFunctionsTemplate : public EventListWeightErrorFunctionsTemplate<T, SELF>, public EventListTofFunctionsTemplate<T, SELF>
 {
-  
+  using EventListWeightErrorFunctionsTemplate
+  ::EventListWeightFunctionsTemplate
+  ::EventListBaseFunctionsTemplate
+  ::events;
 
-private:
+  public:
+
+  EventListWeightErrorTofFunctionsTemplate(std::shared_ptr<std::vector<T>> events): 
+  EventListWeightErrorFunctionsTemplate<T, SELF>(events), 
+  EventListTofFunctionsTemplate<T, SELF>(events) 
+  {}
+
+protected:
 
 // --------------------------------------------------------------------------
 /** Create an EventListBase from a histogram. This converts bins to weighted
@@ -537,7 +549,7 @@ void divideHistogramHelper(std::vector<T> &events, const MantidVec &X, const Man
 
 
     friend T;
-    EventListWeightErrorTofFunctionsTemplate() = default;
+    // EventListWeightErrorTofFunctionsTemplate() = default;
 
     inline T & as_underlying()
     {

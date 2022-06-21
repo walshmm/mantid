@@ -50,6 +50,8 @@ public:
 
   EventListBase(const std::vector<WeightedEventNoTime> &events);
 
+  EventListBase(const std::vector<TofEventNoTime> &events);
+
   ~EventListBase() override;
 
   void copyDataFrom(const ISpectrum &source) override;
@@ -72,6 +74,10 @@ public:
   EventListBase &operator+=(const EventListBase &more_events);
 
   EventListBase &operator-=(const EventListBase &more_events);
+
+  EventListBase &operator*=(const double value);
+
+  EventListBase &operator/=(const double value);
 
   bool operator==(const EventListBase &rhs) const;
   bool operator!=(const EventListBase &rhs) const;
@@ -237,12 +243,10 @@ public:
                                   std::map<int, EventList *> outputs) const;
 
   void multiply(const double value, const double error = 0.0) override;
-  EventList &operator*=(const double value);
 
   void multiply(const MantidVec &X, const MantidVec &Y, const MantidVec &E) override;
 
   void divide(const double value, const double error = 0.0) override;
-  EventList &operator/=(const double value);
 
   void divide(const MantidVec &X, const MantidVec &Y, const MantidVec &E) override;
 
@@ -273,10 +277,10 @@ protected:
   void checkIsYAndEWritable() const override;
 private:
   using ISpectrum::copyDataInto;
-  void copyDataInto(EventList &sink) const override;
-  void copyDataInto(Histogram1D &sink) const override;
+  void copyDataInto(EventListBase &sink) const;
+  void copyDataInto(Histogram1D &sink) const;
 
-  const HistogramData::Histogram &histogramRef() const override { return m_histogram; }
+  const HistogramData::Histogram &histogramRef() const override { throw std::runtime_error("unimplemented, use a derived class"); }
   HistogramData::Histogram &mutableHistogramRef() override;
 
 
@@ -346,33 +350,33 @@ private:
                                          std::vector<T> &output);
   template <class T> void filterInPlaceHelper(Kernel::TimeSplitterType &splitter, typename std::vector<T> &events);
   template <class T>
-  void splitByTimeHelper(Kernel::TimeSplitterType &splitter, std::vector<EventList *> outputs,
+  void splitByTimeHelper(Kernel::TimeSplitterType &splitter, std::vector<EventListBase *> outputs,
                          typename std::vector<T> &events) const;
   template <class T>
-  void splitByFullTimeHelper(Kernel::TimeSplitterType &splitter, std::map<int, EventList *> outputs,
+  void splitByFullTimeHelper(Kernel::TimeSplitterType &splitter, std::map<int, EventListBase *> outputs,
                              typename std::vector<T> &events, bool docorrection, double toffactor,
                              double tofshift) const;
   /// Split events by pulse time
   template <class T>
-  void splitByPulseTimeHelper(Kernel::TimeSplitterType &splitter, std::map<int, EventList *> outputs,
+  void splitByPulseTimeHelper(Kernel::TimeSplitterType &splitter, std::map<int, EventListBase *> outputs,
                               typename std::vector<T> &events) const;
 
   /// Split events (template) by pulse time with matrix splitters
   template <class T>
   void splitByPulseTimeWithMatrixHelper(const std::vector<int64_t> &vec_split_times,
-                                        const std::vector<int> &vec_split_target, std::map<int, EventList *> outputs,
+                                        const std::vector<int> &vec_split_target, std::map<int, EventListBase *> outputs,
                                         typename std::vector<T> &events) const;
 
   template <class T>
   std::string splitByFullTimeVectorSplitterHelper(const std::vector<int64_t> &vectimes,
-                                                  const std::vector<int> &vecgroups, std::map<int, EventList *> outputs,
+                                                  const std::vector<int> &vecgroups, std::map<int, EventListBase *> outputs,
                                                   typename std::vector<T> &vecEvents, bool docorrection,
                                                   double toffactor, double tofshift) const;
 
   template <class T>
   std::string
   splitByFullTimeSparseVectorSplitterHelper(const std::vector<int64_t> &vectimes, const std::vector<int> &vecgroups,
-                                            std::map<int, EventList *> outputs, typename std::vector<T> &vecEvents,
+                                            std::map<int, EventListBase *> outputs, typename std::vector<T> &vecEvents,
                                             bool docorrection, double toffactor, double tofshift) const;
 
   template <class T> static void multiplyHelper(std::vector<T> &events, const double value, const double error = 0.0);

@@ -1,10 +1,27 @@
 
+#pragma once
+
+#include "MantidDataObjects/EventList.h"
+#include "MantidAPI/IEventList.h"
+#include "MantidDataObjects/Events.h"
+#include "MantidKernel/MultiThreaded.h"
+#include "MantidKernel/System.h"
+#include "MantidKernel/cow_ptr.h"
+#include "MantidDataObjects/CompareTimeAtSample.h"
+#include <iosfwd>
+#include <memory>
+#include <vector>
+
 namespace Mantid {
 namespace DataObjects {
 template <typename T, typename SELF>
 class EventListBaseFunctionsTemplate
 {
   public:
+
+  EventListBaseFunctionsTemplate(std::shared_ptr<std::vector<T>> events) {
+    this->events = events;
+  }
 
   void checkAndSanitizeHistogram(HistogramData::Histogram &histogram) {
   if (histogram.xMode() != HistogramData::Histogram::XMode::BinEdges)
@@ -765,7 +782,33 @@ void sortTof() const {
   this->order = TOF_SORT;
 }
 
-private:
+protected:
+
+    //Should be a shared pointer that gets passed down 
+    //to parents so they all point to the same list
+    std::shared_ptr<std::vector<T>> events;
+
+
+    /// Histogram object holding the histogram data. Currently only X.
+    HistogramData::Histogram m_histogram;
+
+    /// What type of event is in our list.
+    Mantid::API::EventType eventType;
+
+    /// Last sorting order
+    mutable EventSortType order;
+
+    /// MRU lists of the parent EventWorkspace
+    mutable EventWorkspaceMRU *mru;
+
+    /// Mutex that is locked while sorting an event list
+    mutable std::mutex m_sortMutex;
+
+
+
+// private:
+
+const Histogram &histogramRef() const override { return m_histogram; }
 
 /// Used by Histogram1D::copyDataFrom for dynamic dispatch for `other`.
 void copyDataInto(Histogram1D &sink) const { sink.setHistogram(histogram()); }
@@ -851,26 +894,10 @@ std::size_t maskConditionHelper(std::vector<T> &events, const std::vector<bool> 
 
     friend T;
     friend SELF;
-    std::vector<T> events;
-
-    /// Histogram object holding the histogram data. Currently only X.
-    HistogramData::Histogram m_histogram;
-
-    /// What type of event is in our list.
-    Mantid::API::EventType eventType;
-
-    /// Last sorting order
-    mutable EventSortType order;
-
-    /// MRU lists of the parent EventWorkspace
-    mutable EventWorkspaceMRU *mru;
-
-    /// Mutex that is locked while sorting an event list
-    mutable std::mutex m_sortMutex;
 
 
 
-    EventListBaseFunctionsTemplate() = default;
+    // EventListBaseFunctionsTemplate() = default;
 
     inline T & as_underlying()
     {

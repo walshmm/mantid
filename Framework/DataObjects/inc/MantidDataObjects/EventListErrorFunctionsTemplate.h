@@ -1,3 +1,4 @@
+#pragma once
 
 #include "MantidDataObjects/EventListBaseFunctionsTemplate.h"
 
@@ -6,6 +7,10 @@ namespace DataObjects {
 template <typename T, typename SELF>
 class EventListErrorFunctionsTemplate : public EventListBaseFunctionsTemplate<T, SELF>
 {
+public:
+
+EventListErrorFunctionsTemplate(std::shared_ptr<std::vector<T>> events): 
+EventListBaseFunctionsTemplate<T, SELF>(events){}
   
 
 private:
@@ -24,7 +29,7 @@ private:
     }
 
     friend T;
-    EventListErrorFunctionsTemplate() = default;
+    // EventListErrorFunctionsTemplate() = default;
 
     inline T & as_underlying()
     {

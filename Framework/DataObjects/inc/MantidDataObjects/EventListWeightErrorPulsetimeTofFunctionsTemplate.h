@@ -1,14 +1,28 @@
+#pragma once
+
 #include "MantidDataObjects/EventListWeightErrorTofFunctionsTemplate.h"
 #include "MantidDataObjects/EventListPulsetimeTofFunctionsTemplate.h"
+#include "MantidKernel/DateAndTimeHelpers.h"
 
 namespace Mantid {
 namespace DataObjects {
+using Types::Core::DateAndTime;
+
 template <typename T, typename SELF>
 class EventListWeightErrorPulsetimeTofFunctionsTemplate : public EventListWeightErrorTofFunctionsTemplate<T, SELF>, public EventListPulsetimeTofFunctionsTemplate<T, SELF>
 {
+    using EventListWeightErrorTofFunctionsTemplate<T, SELF>
+    ::EventListWeightErrorFunctionsTemplate<T, SELF>
+    ::EventListWeightFunctionsTemplate<T, SELF>
+    ::EventListBaseFunctionsTemplate<T, SELF>
+    ::events;
   
+  public:
+     EventListWeightErrorPulsetimeTofFunctionsTemplate(std::shared_ptr<std::vector<T>> events): 
+  EventListWeightErrorTofFunctionsTemplate<T, SELF>(events), 
+  EventListPulsetimeTofFunctionsTemplate<T, SELF>(events){}
 
-private:
+protected:
     // --------------------------------------------------------------------------
     /** SUBTRACT another EventListBase from this event list.
      * The event lists are concatenated, but the weights of the incoming
@@ -136,7 +150,7 @@ inline void compressFatEventsHelper(const std::vector<T> &events, std::vector<We
 }
 
     friend T;
-    EventListWeightErrorPulsetimeTofFunctionsTemplate() = default;
+    // EventListWeightErrorPulsetimeTofFunctionsTemplate() = default;
 
     inline T & as_underlying()
     {

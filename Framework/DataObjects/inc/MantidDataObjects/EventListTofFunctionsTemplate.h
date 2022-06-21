@@ -1,3 +1,4 @@
+#pragma once
 
 #include "MantidDataObjects/EventListBaseFunctionsTemplate.h"
 
@@ -7,6 +8,10 @@ template <typename T, typename SELF>
 class EventListTofFunctionsTemplate : public EventListBaseFunctionsTemplate<T, SELF>
 {
   public:
+
+  EventListTofFunctionsTemplate(std::shared_ptr<std::vector<T>> events): 
+  EventListBaseFunctionsTemplate<T, SELF>(events){}
+
   
   void sort(const EventSortType order) const {
     if (order == UNSORTED) {
@@ -18,7 +23,7 @@ class EventListTofFunctionsTemplate : public EventListBaseFunctionsTemplate<T, S
     }
   }
 
-private:
+protected:
 
 /**
  * @return The maximum tof value for the list of events->
@@ -377,7 +382,7 @@ void convertUnitsQuicklyHelper(typename std::vector<T> &events, const double &fa
 }
 
     friend T;
-    EventListTofFunctionsTemplate() = default;
+    // EventListTofFunctionsTemplate() = default;
 
     inline T & as_underlying()
     {

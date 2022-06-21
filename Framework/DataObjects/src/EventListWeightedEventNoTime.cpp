@@ -6,9 +6,13 @@ using Types::Core::DateAndTime;
 using Types::Event::TofEvent;
 using namespace Mantid::API;
 
+EventListWeightedEventNoTime::EventListWeightedEventNoTime() : EventListWeightErrorTofFunctionsTemplate(std::make_shared<std::vector<WeightedEventNoTime>>()){
+    events = EventListWeightErrorTofFunctionsTemplate::events;
+}
+
 /** Constructor copying from an existing event list
  * @param rhs :: EventListBase object to copy*/
-EventListWeightedEventNoTime::EventListBase(const EventListBase &rhs) : IEventList(rhs), m_histogram(rhs.m_histogram), mru{nullptr} {
+EventListWeightedEventNoTime::EventListBase(const EventListBase &rhs) :EventListWeightedEventNoTime(), IEventList(rhs), m_histogram(rhs.m_histogram), mru{nullptr} {
   // Note that operator= also assigns m_histogram, but the above use of the copy
   // constructor avoid a memory allocation and is thus faster.
   this->operator=(rhs);
@@ -17,7 +21,7 @@ EventListWeightedEventNoTime::EventListBase(const EventListBase &rhs) : IEventLi
 /** Constructor, taking a vector of events->
  * @param events :: Vector of WeightedEventNoTime's */
 EventListWeightedEventNoTime::EventListBase(const std::vector<WeightedEventNoTime> &events)
-    : m_histogram(HistogramData::Histogram::XMode::BinEdges, HistogramData::Histogram::YMode::Counts), mru(nullptr) {
+    :EventListWeightedEventNoTime(), m_histogram(HistogramData::Histogram::XMode::BinEdges, HistogramData::Histogram::YMode::Counts), mru(nullptr) {
   this->events->assign(events.begin(), events.end());
   this->eventType = WEIGHTED_NOTIME;
   this->order = UNSORTED;

@@ -49,62 +49,38 @@ using namespace Mantid::API;
 
 /// Constructor (empty)
 // EventWorkspace is always histogram data and so is thus EventListBase
-EventListBase::EventListBase()
-    : m_histogram(HistogramData::Histogram::XMode::BinEdges, HistogramData::Histogram::YMode::Counts), eventType(TOF),
-      order(UNSORTED), mru(nullptr) {}
+EventListBase::EventListBase(){}
 
 /** Constructor with a MRU list
  * @param mru :: pointer to the MRU of the parent EventWorkspace
  * @param specNo :: the spectrum number for the event list
  */
-EventListBase::EventListBase(EventWorkspaceMRU *mru, specnum_t specNo)
-    : IEventList(specNo),
-      m_histogram(HistogramData::Histogram::XMode::BinEdges, HistogramData::Histogram::YMode::Counts), eventType(TOF),
-      order(UNSORTED), mru(mru) {}
+EventListBase::EventListBase(EventWorkspaceMRU *mru, specnum_t specNo){}
 
 /** Constructor copying from an existing event list
  * @param rhs :: EventListBase object to copy*/
-EventListBase::EventListBase(const EventListBase &rhs) : IEventList(rhs), m_histogram(rhs.m_histogram), mru{nullptr} {
-  // Note that operator= also assigns m_histogram, but the above use of the copy
-  // constructor avoid a memory allocation and is thus faster.
-  this->operator=(rhs);
+EventListBase::EventListBase(const EventListBase &rhs){
+
 }
 
 /** Constructor, taking a vector of events->
  * @param events :: Vector of TofEvent's */
-EventListBase::EventListBase(const std::vector<TofEvent> &events)
-    : m_histogram(HistogramData::Histogram::XMode::BinEdges, HistogramData::Histogram::YMode::Counts), eventType(TOF),
-      mru(nullptr) {
-  this->events->assign(events.begin(), events.end());
-  this->eventType = TOF;
-  this->order = UNSORTED;
+EventListBase::EventListBase(const std::vector<TofEvent> &events){
 }
 
 /** Constructor, taking a vector of events->
  * @param events :: Vector of WeightedEvent's */
-EventListBase::EventListBase(const std::vector<WeightedEvent> &events)
-    : m_histogram(HistogramData::Histogram::XMode::BinEdges, HistogramData::Histogram::YMode::Counts), mru(nullptr) {
-  this->events->assign(events.begin(), events.end());
-  this->eventType = WEIGHTED;
-  this->order = UNSORTED;
+EventListBase::EventListBase(const std::vector<WeightedEvent> &events){
 }
 
 /** Constructor, taking a vector of events->
  * @param events :: Vector of WeightedEventNoTime's */
-EventListBase::EventListBase(const std::vector<WeightedEventNoTime> &events)
-    : m_histogram(HistogramData::Histogram::XMode::BinEdges, HistogramData::Histogram::YMode::Counts), mru(nullptr) {
-  this->events->assign(events.begin(), events.end());
-  this->eventType = WEIGHTED_NOTIME;
-  this->order = UNSORTED;
+EventListBase::EventListBase(const std::vector<WeightedEventNoTime> &events) {
 }
 
 /** Constructor, taking a vector of events->
  * @param events :: Vector of TofEventNoTime's */
-EventListBase::EventListBase(const std::vector<TofEventNoTime> &events)
-    : m_histogram(HistogramData::Histogram::XMode::BinEdges, HistogramData::Histogram::YMode::Counts), mru(nullptr) {
-  this->events->assign(events.begin(), events.end());
-  this->eventType = UNWEIGHTED;
-  this->order = UNSORTED;
+EventListBase::EventListBase(const std::vector<TofEventNoTime> &events){
 }
 
 /// Destructor
@@ -121,8 +97,13 @@ EventListBase::~EventListBase() {
   // std::vector<TofEvent>().swap(events); //Trick to release the vector memory.
 }
 
+void throwUnimplementedError() {
+  throw std::logic_error("Function not implemented, please use a derived class and not the base class.");
+}
+
+
 /// Copy data from another EventListBase, via ISpectrum reference.
-void EventListBase::copyDataFrom(const ISpectrum &source) { throwUnimplementedError() }
+void EventListBase::copyDataFrom(const ISpectrum &source) { throwUnimplementedError(); }
 
 /// Used by copyDataFrom for dynamic dispatch for its `source`.
 void EventListBase::copyDataInto(EventListBase &sink) const {
@@ -266,10 +247,6 @@ bool EventListBase::operator==(const EventListBase &rhs) const {
  * @return :: true if not equal.
  */
 bool EventListBase::operator!=(const EventListBase &rhs) const { return (!this->operator==(rhs)); }
-
-void throwUnimplementedError() {
-  throw std::logic_error("Function not implemented, please use a derived class and not the base class.");
-}
 
 bool EventListBase::equals(const EventListBase &rhs, const double tolTof, const double tolWeight,
                        const int64_t tolPulse) const {
@@ -459,7 +436,7 @@ void EventListBase::reserve(size_t num) {
  * @param order :: Order by which to sort.
  * */
 void EventListBase::sort(const EventSortType order) const {
-  throwUnimplementedError()
+  throwUnimplementedError();
 }
 
 // --------------------------------------------------------------------------
@@ -467,12 +444,12 @@ void EventListBase::sort(const EventSortType order) const {
  * SHOULD ONLY BE USED IN TESTS or if you know what you are doing.
  * @param order :: sort order to set.
  */
-void EventListBase::setSortOrder(const EventSortType order) const {  throwUnimplementedError() }
+void EventListBase::setSortOrder(const EventSortType order) const {  throwUnimplementedError(); }
 
 // --------------------------------------------------------------------------
 /** Sort events by TOF in one thread */
 void EventListBase::sortTof() const {
-  throwUnimplementedError()
+  throwUnimplementedError();
 }
 
 // --------------------------------------------------------------------------
@@ -670,7 +647,7 @@ void EventListBase::compressEvents(double tolerance, EventList *destination) {
 }
 
 void EventListBase::compressFatEvents(const double tolerance, const Mantid::Types::Core::DateAndTime &timeStart,
-                                  const double seconds, EventListBase *destination) {
+                                  const double seconds, EventList *destination) {
 
   throwUnimplementedError();
 }
@@ -891,7 +868,7 @@ void EventListBase::addPulsetimes(const std::vector<double> &seconds) {
  * @param tofMax :: upper bound of TOF to filter out
  */
 void EventListBase::maskTof(const double tofMin, const double tofMax) {
-  throwUnimplementedError()
+  throwUnimplementedError();
 }
 
 
@@ -1167,12 +1144,12 @@ void EventListBase::divide(const double value, const double error) {
  * @param output :: reference to an event list that will be output.
  * @throws std::invalid_argument If output is a reference to this EventListBase
  */
-void EventListBase::filterByPulseTime(DateAndTime start, DateAndTime stop, EventListBase &output) const {
+void EventListBase::filterByPulseTime(DateAndTime start, DateAndTime stop, EventList &output) const {
   throwUnimplementedError();
 }
 
 void EventListBase::filterByTimeAtSample(Types::Core::DateAndTime start, Types::Core::DateAndTime stop, double tofFactor,
-                                     double tofOffset, EventListBase &output) const {
+                                     double tofOffset, EventList &output) const {
   throwUnimplementedError();
 }
 
@@ -1198,7 +1175,7 @@ void EventListBase::filterInPlace(Kernel::TimeSplitterType &splitter) {
  *entries in there should
  *        be big enough to accommodate the indices.
  */
-void EventListBase::splitByTime(Kernel::TimeSplitterType &splitter, std::vector<EventListBase *> outputs) const {
+void EventListBase::splitByTime(Kernel::TimeSplitterType &splitter, std::vector<EventList *> outputs) const {
   throwUnimplementedError();
 }
 
@@ -1216,7 +1193,7 @@ void EventListBase::splitByTime(Kernel::TimeSplitterType &splitter, std::vector<
  * @param toffactor:  a correction factor for each TOF to multiply with
  * @param tofshift:  a correction shift for each TOF to add with
  */
-void EventListBase::splitByFullTime(Kernel::TimeSplitterType &splitter, std::map<int, EventListBase *> outputs,
+void EventListBase::splitByFullTime(Kernel::TimeSplitterType &splitter, std::map<int, EventList *> outputs,
                                 bool docorrection, double toffactor, double tofshift) const {
   throwUnimplementedError();
 }
@@ -1237,7 +1214,7 @@ void EventListBase::splitByFullTime(Kernel::TimeSplitterType &splitter, std::map
 // have an option to ignore the un-filtered events!
 std::string EventListBase::splitByFullTimeMatrixSplitter(const std::vector<int64_t> &vec_splitters_time,
                                                      const std::vector<int> &vecgroups,
-                                                     std::map<int, EventListBase *> vec_outputEventList, bool docorrection,
+                                                     std::map<int, EventList *> vec_outputEventList, bool docorrection,
                                                      double toffactor, double tofshift) const {
   throwUnimplementedError();
 }
@@ -1247,7 +1224,7 @@ std::string EventListBase::splitByFullTimeMatrixSplitter(const std::vector<int64
 //----------------------------------------------------------------------------------------------
 /** Split the event list by pulse time
  */
-void EventListBase::splitByPulseTime(Kernel::TimeSplitterType &splitter, std::map<int, EventListBase *> outputs) const {
+void EventListBase::splitByPulseTime(Kernel::TimeSplitterType &splitter, std::map<int, EventList *> outputs) const {
   throwUnimplementedError();
 }
 
@@ -1256,7 +1233,7 @@ void EventListBase::splitByPulseTime(Kernel::TimeSplitterType &splitter, std::ma
  */
 // TODO/NOW - TEST
 void EventListBase::splitByPulseTimeWithMatrix(const std::vector<int64_t> &vec_times, const std::vector<int> &vec_target,
-                                           std::map<int, EventListBase *> outputs) const {
+                                           std::map<int, EventList *> outputs) const {
   throwUnimplementedError();
 }
 

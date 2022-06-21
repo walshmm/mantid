@@ -1,3 +1,5 @@
+#pragma once
+
 #include "MantidDataObjects/EventListBaseFunctionsTemplate.h"
 
 namespace Mantid {
@@ -5,9 +7,14 @@ namespace DataObjects {
 template <typename T, typename SELF>
 class EventListWeightFunctionsTemplate : public EventListBaseFunctionsTemplate<T, SELF>
 {
-  
+  public:
 
-private:
+  
+  EventListWeightFunctionsTemplate(std::shared_ptr<std::vector<T>> events): 
+  EventListBaseFunctionsTemplate<T, SELF>(events){}
+
+
+protected:
 
     // --------------------------------------------------------------------------
 /** Get the weight member of all events in a list
@@ -23,7 +30,7 @@ void getWeightsHelper(const std::vector<T> &events, std::vector<double> &weights
 }
 
     friend T;
-    EventListWeightFunctionsTemplate() = default;
+    // EventListWeightFunctionsTemplate() = default;
 
     inline T & as_underlying()
     {

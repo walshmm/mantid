@@ -1,3 +1,5 @@
+#pragma once
+
 #include "MantidDataObjects/EventListWeightFunctionsTemplate.h"
 #include "MantidDataObjects/EventListErrorFunctionsTemplate.h"
 
@@ -7,9 +9,16 @@ namespace DataObjects {
 template <typename T, typename SELF>
 class EventListWeightErrorFunctionsTemplate : public EventListWeightFunctionsTemplate<T, SELF>, public EventListErrorFunctionsTemplate<T, SELF>
 {
-  
+    using EventListWeightFunctionsTemplate
+  ::EventListBaseFunctionsTemplate
+  ::events;
 
-private:
+  public:
+    EventListWeightErrorFunctionsTemplate(std::shared_ptr<std::vector<T>> events): 
+  EventListWeightFunctionsTemplate<T, SELF>(events), 
+  EventListErrorFunctionsTemplate<T, SELF>(events){}
+
+protected:
 
 // --------------------------------------------------------------------------
 /** Integrate the events between a range of X values, or all events->
@@ -223,7 +232,7 @@ void multiplyHelper(std::vector<T> &events, const double value, const double err
 
 
     friend T;
-    EventListWeightErrorFunctionsTemplate() = default;
+    // EventListWeightErrorFunctionsTemplate() = default;
 
     inline T & as_underlying()
     {

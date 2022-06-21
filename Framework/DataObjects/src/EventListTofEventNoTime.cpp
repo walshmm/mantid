@@ -6,9 +6,19 @@ using Types::Core::DateAndTime;
 using Types::Event::TofEvent;
 using namespace Mantid::API;
 
+EventListTofEventNoTime::EventListTofEventNoTime() : EventListWeightErrorPulsetimeTofFunctionsTemplate(std::make_shared<std::vector<TofEventNoTime>>()){
+    events = EventListTofFunctionsTemplate::events;
+}
+
+/** Constructor, taking a vector of events.
+ * @param events :: Vector of TofEventNoTime's */
+EventListTofEventNoTime::EventListTofEventNoTime(const std::vector<TofEventNoTime> &events) : EventListTofEventNoTime() {
+     this->events->assign(events.begin(), events.end());
+}
+
 /** Constructor copying from an existing event list
  * @param rhs :: EventListBase object to copy*/
-EventListTofEventNoTime::EventListBase(const EventListBase &rhs) : IEventList(rhs), m_histogram(rhs.m_histogram), mru{nullptr} {
+EventListTofEventNoTime::EventListBase(const EventListBase &rhs) :EventListTofEventNoTime(), IEventList(rhs), m_histogram(rhs.m_histogram), mru{nullptr} {
   // Note that operator= also assigns m_histogram, but the above use of the copy
   // constructor avoid a memory allocation and is thus faster.
   this->operator=(rhs);
@@ -17,7 +27,7 @@ EventListTofEventNoTime::EventListBase(const EventListBase &rhs) : IEventList(rh
 /** Constructor, taking a vector of events->
  * @param events :: Vector of TofEventNoTime's */
 EventListTofEventNoTime::EventListBase(const std::vector<TofEventNoTime> &events)
-    : m_histogram(HistogramData::Histogram::XMode::BinEdges, HistogramData::Histogram::YMode::Counts), mru(nullptr) {
+    :EventListTofEventNoTime(), m_histogram(HistogramData::Histogram::XMode::BinEdges, HistogramData::Histogram::YMode::Counts), mru(nullptr) {
   this->events->assign(events.begin(), events.end());
   this->eventType = UNWEIGHTED;
   this->order = UNSORTED;
@@ -104,10 +114,10 @@ void EventListTofEventNoTime::generateHistogramTimeAtSample(const MantidVec &X, 
 }
 
 void EventListTofEventNoTime::generateHistogramPulseTime(const MantidVec &X, MantidVec &Y, MantidVec &E, bool skipError) const {
-    throw std::runtime_error("TODO: Determine if I can histogram with only pulse time.")
+    throw std::runtime_error("TODO: Determine if I can histogram with only pulse time.");
 }
 
-void EventListTofEventNoTime::filterByPulseTime(DateAndTime start, DateAndTime stop, EventListBase &output) const {
+void EventListTofEventNoTime::filterByPulseTime(DateAndTime start, DateAndTime stop, EventList &output) const {
     throw std::runtime_error("EventListTofEventNoTime::filterByTimeAtSample() called on an "
                              "EventListBase that no longer has full time "
                              "information.");

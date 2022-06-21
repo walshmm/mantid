@@ -17,6 +17,8 @@ class DLLExport EventListTofEventNoTime :
 public EventListBase, 
 public EventListTofFunctionsTemplate<TofEventNoTime, EventListTofEventNoTime>,
 public EventListPermutationsMinusHelperFunctions<TofEventNoTime> {
+    EventListTofEventNoTime();
+    EventListTofEventNoTime(const std::vector<TofEventNoTime> &events);
     bool equals(const EventListBase &rhs, const double tolTof, const double tolWeight,
                        const int64_t tolPulse) const  ;
     WeightedEvent getEvent(size_t event_number)  ;
@@ -42,6 +44,7 @@ public EventListPermutationsMinusHelperFunctions<TofEventNoTime> {
     void splitByPulseTimeWithMatrix(const std::vector<int64_t> &vec_times, const std::vector<int> &vec_target,
                                            std::map<int, EventListBase *> outputs) const  ;
     EventListTofEventNoTime &operator-=(const EventListBase &more_events);
+    void sortPulseTimeTOFDelta(const Types::Core::DateAndTime &start, const double seconds) const;
 
     // private:
     //  /// List of Events

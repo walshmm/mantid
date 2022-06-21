@@ -1,3 +1,5 @@
+#pragma once
+
 #include "MantidDataObjects/EventListPulsetimeFunctionsTemplate.h"
 #include "MantidDataObjects/EventListTofFunctionsTemplate.h"
 
@@ -30,7 +32,24 @@ namespace DataObjects {
 template <typename T, typename SELF>
 class EventListPulsetimeTofFunctionsTemplate : public EventListPulsetimeFunctionsTemplate<T, SELF>, public EventListTofFunctionsTemplate<T, SELF>
 {
+  using EventListPulsetimeFunctionsTemplate
+  ::EventListBaseFunctionsTemplate
+  ::events;
+  using EventListPulsetimeFunctionsTemplate
+  ::EventListBaseFunctionsTemplate
+  ::m_histogram;
+  using EventListPulsetimeFunctionsTemplate
+  ::EventListBaseFunctionsTemplate
+  ::eventType;
+
+
+
 public:
+  EventListPulsetimeTofFunctionsTemplate(std::shared_ptr<std::vector<T>> events): 
+  EventListPulsetimeFunctionsTemplate<T, SELF>(events), 
+  EventListTofFunctionsTemplate<T, SELF>(events){}
+
+
 // --------------------------------------------------------------------------
 /** Sort events by TOF or Frame
  * @param order :: Order by which to sort.
@@ -52,11 +71,11 @@ void sort(const EventSortType order) const {
     throw std::invalid_argument("sorting by time at sample requires extra "
                                 "parameters. Use sortTimeAtSample instead.");
   } else {
-    throw runtime_error("Invalid sort type in EventListBase::sort(EventSortType)");
+    throw std::runtime_error("Invalid sort type in EventListBase::sort(EventSortType)");
   }
 }
 
-private:
+protected:
 
 /**
  * Sort by the pulse time with a tolerance. The pulsetime to compare is a
@@ -67,11 +86,11 @@ private:
  */
 void sortPulseTimeTOFDelta(const Types::Core::DateAndTime &start, const double seconds) const {
   // Avoid sorting from multiple threads
-  std::lock_guard<std::mutex> _lock(m_sortMutex);
+  std::lock_guard<std::mutex> _lock(this->m_sortMutex);
 
   std::function<bool(const TofEvent &, const TofEvent &)> comparator = comparePulseTimeTOFDelta(start, seconds);
 
-  tbb::parallel_sort(events->begin(), events->end(), comparator);
+  tbb::parallel_sort(this->events->begin(), this->events->end(), comparator);
   
   this->order = UNSORTED; // so the function always re-runs
 }
@@ -80,17 +99,17 @@ void sortPulseTimeTOFDelta(const Types::Core::DateAndTime &start, const double s
  * Sort events by pulse time + TOF
  * (the absolute time)
  */
-void EventListBase::sortPulseTimeTOF() const {
+void sortPulseTimeTOF() const {
   if (this->order == PULSETIMETOF_SORT)
     return; // already ordered
 
   // Avoid sorting from multiple threads
-  std::lock_guard<std::mutex> _lock(m_sortMutex);
+  std::lock_guard<std::mutex> _lock(this->m_sortMutex);
   // If the list was sorted while waiting for the lock, return.
   if (this->order == PULSETIMETOF_SORT)
     return;
 
-  tbb::parallel_sort(events->begin(), events->end(), compareEventPulseTimeTOF);
+  tbb::parallel_sort(this->events->begin(), this->events->end(), compareEventPulseTimeTOF);
 
   // Save
   this->order = PULSETIMETOF_SORT;
@@ -134,13 +153,13 @@ void filterByPulseTime(DateAndTime start, DateAndTime stop, EventListBase &outpu
   // Clear the output
   output.clear();
   // Has to match the given type
-  output.switchTo(eventType);
+  output.switchTo(this->eventType);
   output.setDetectorIDs(this->getDetectorIDs());
-  output.setHistogram(m_histogram);
+  output.setHistogram(this->m_histogram);
   output.setSortOrder(this->order);
 
   // Iterate through all events (sorted by pulse time)
-  filterByPulseTimeHelper(*(this->events), start, stop, output.events);    break;
+  filterByPulseTimeHelper(*(this->events), start, stop, output.events);  
   
 }
 
@@ -155,9 +174,9 @@ void filterByTimeAtSample(Types::Core::DateAndTime start, Types::Core::DateAndTi
   // Clear the output
   output.clear();
   // Has to match the given type
-  output.switchTo(eventType);
+  output.switchTo(this->eventType);
   output.setDetectorIDs(this->getDetectorIDs());
-  output.setHistogram(m_histogram);
+  output.setHistogram(this->m_histogram);
   output.setSortOrder(this->order);
 
   filterByTimeAtSampleHelper(*(this->events), start, stop, tofFactor, tofOffset, output.events);
@@ -305,9 +324,9 @@ void splitByFullTime(Kernel::TimeSplitterType &splitter, std::map<int, EventList
     EventListBase *opeventlist = outiter->second;
     opeventlist->clear();
     opeventlist->setDetectorIDs(this->getDetectorIDs());
-    opeventlist->setHistogram(m_histogram);
+    opeventlist->setHistogram(this->m_histogram);
     // Match the output event type.
-    opeventlist->switchTo(eventType);
+    opeventlist->switchTo(this->eventType);
   }
 
   // Do nothing if there are no entries
@@ -433,9 +452,9 @@ std::string splitByFullTimeMatrixSplitter(const std::vector<int64_t> &vec_splitt
     EventListBase *opeventlist = outiter->second;
     opeventlist->clear();
     opeventlist->setDetectorIDs(this->getDetectorIDs());
-    opeventlist->setHistogram(m_histogram);
+    opeventlist->setHistogram(this->m_histogram);
     // Match the output event type.
-    opeventlist->switchTo(eventType);
+    opeventlist->switchTo(this->eventType);
   }
 
   std::string debugmessage;
@@ -484,7 +503,7 @@ std::string splitByFullTimeMatrixSplitter(const std::vector<int64_t> &vec_splitt
  *detector to sample
  */
 std::string splitByFullTimeVectorSplitterHelper(const std::vector<int64_t> &vectimes, const std::vector<int> &vecgroups,
-                                               std::map<int, EventListBase *> outputs, typename std::vector<T> &vecEvents,
+                                               std::map<int, EventListBase *> outputs, typename std::vector<T> &vecevents,
                                                bool docorrection, double toffactor, double tofshift) const {
   // Define variables for events
   // size_t numevents = events.size();
@@ -552,7 +571,7 @@ std::string splitByFullTimeVectorSplitterHelper(const std::vector<int64_t> &vect
 std::string splitByFullTimeSparseVectorSplitterHelper(const std::vector<int64_t> &vectimes,
                                                                  const std::vector<int> &vecgroups,
                                                                  std::map<int, EventListBase *> outputs,
-                                                                 typename std::vector<T> &vecEvents, bool docorrection,
+                                                                 typename std::vector<T> &vecevents, bool docorrection,
                                                                  double toffactor, double tofshift) const {
   // Define variables for events
   // size_t numevents = events.size();
@@ -628,7 +647,7 @@ std::string splitByFullTimeSparseVectorSplitterHelper(const std::vector<int64_t>
 }
 
     friend T;
-    EventListPulsetimeTofFunctionsTemplate() = default;
+    // EventListPulsetimeTofFunctionsTemplate() = default;
 
     inline T & as_underlying()
     {

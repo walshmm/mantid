@@ -1,3 +1,4 @@
+#pragma once
 
 #include "MantidDataObjects/Events.h"
 
@@ -38,7 +39,7 @@ T1 &operator-=(const T2 &more_events) {
   return *this;
 }
 
-private:
+protected:
     // --------------------------------------------------------------------------
     /** SUBTRACT another EventListBase from this event list.
      * The event lists are concatenated, but the weights of the incoming
@@ -49,7 +50,7 @@ private:
      * @param more_events :: Another event vector being subtracted from this.
      * @return reference to this
      * */
-    template <class T1, class T2> void minusHelper(std::vector<T1> &events, const std::vector<T2> &more_events) {
+    void minusHelper(std::vector<T1> &events, const std::vector<T2> &more_events) {
     // Make the end vector big enough in one go (avoids repeated re-allocations).
     events.reserve(events.size() + more_events.size());
     /* In the event of subtracting in place, calling the end() vector would make

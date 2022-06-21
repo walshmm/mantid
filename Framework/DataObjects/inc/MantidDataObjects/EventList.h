@@ -68,6 +68,8 @@ public:
 
   EventList(const std::vector<WeightedEventNoTime> &events);
 
+  EventList(const std::vector<TofEventNoTime> &events);
+
   ~EventList() override;
 
   void copyDataFrom(const ISpectrum &source) override;
@@ -324,6 +326,13 @@ protected:
 private:
   const HistogramData::Histogram &histogramRef() const override { throw std::runtime_error("Not Implemented"); };
   HistogramData::Histogram &mutableHistogramRef() override { throw std::runtime_error("Not Implemented"); };
+ 
+  void switchToUnweightedEvents();
+
+  void switchToWeightedEvents();
+
+  void switchToWeightedEventsNoTime();
+
 };
 
 // Methods overloaded to get event vectors.

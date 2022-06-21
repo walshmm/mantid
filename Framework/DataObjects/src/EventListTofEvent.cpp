@@ -6,12 +6,13 @@ using Types::Core::DateAndTime;
 using Types::Event::TofEvent;
 using namespace Mantid::API;
 
-
+EventListTofEvent::EventListTofEvent() : EventListWeightErrorPulsetimeTofFunctionsTemplate(std::make_shared<std::vector<Types::Event::TofEvent>>()){
+}
 
 /// Constructor (empty)
 // EventWorkspace is always histogram data and so is thus EventListBase
 EventListTofEvent::EventListBase()
-    : m_histogram(HistogramData::Histogram::XMode::BinEdges, HistogramData::Histogram::YMode::Counts), eventType(TOF),
+    : EventListTofEvent(), m_histogram(HistogramData::Histogram::XMode::BinEdges, HistogramData::Histogram::YMode::Counts), eventType(TOF),
       order(UNSORTED), mru(nullptr) {}
 
 /** Constructor with a MRU list
@@ -19,7 +20,7 @@ EventListTofEvent::EventListBase()
  * @param specNo :: the spectrum number for the event list
  */
 EventListTofEvent::EventListBase(EventWorkspaceMRU *mru, specnum_t specNo)
-    : IEventList(specNo),
+    :EventListTofEvent(), IEventList(specNo),
       m_histogram(HistogramData::Histogram::XMode::BinEdges, HistogramData::Histogram::YMode::Counts), eventType(TOF),
       order(UNSORTED), mru(mru) {}
 
@@ -34,7 +35,7 @@ EventListTofEvent::EventListBase(const EventListBase &rhs) : IEventList(rhs), m_
 /** Constructor, taking a vector of events->
  * @param events :: Vector of TofEvent's */
 EventListTofEvent::EventListBase(const std::vector<TofEvent> &events)
-    : m_histogram(HistogramData::Histogram::XMode::BinEdges, HistogramData::Histogram::YMode::Counts), eventType(TOF),
+    :EventListTofEvent(),  m_histogram(HistogramData::Histogram::XMode::BinEdges, HistogramData::Histogram::YMode::Counts), eventType(TOF),
       mru(nullptr) {
   this->events->assign(events.begin(), events.end());
   this->eventType = TOF;
@@ -345,7 +346,7 @@ void EventListTofEvent::generateCountsHistogram(const MantidVec &X, MantidVec &Y
     // bin.
     auto itev = findFirstEvent(this->events, TofEvent(X[0]));
     // Go through all the events,
-    for (auto itx = X.cbegin(); itev != events->end(); ++itev) {
+    for (auto itx = X.cbegin(); itev != this->events->end(); ++itev) {
       double tof = itev->tof();
       itx = std::find_if(itx, X.cend(), [tof](const double x) { return tof < x; });
       if (itx == X.cend()) {

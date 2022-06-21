@@ -17,6 +17,7 @@ class DLLExport EventListWeightedEvent :
 public EventListBase, 
 public EventListWeightErrorPulsetimeTofFunctionsTemplate<WeightedEvent, EventListWeightedEvent>,
 public EventListPermutationsMinusHelperFunctions<WeightedEvent> {
+    EventListWeightedEvent();
     bool equals(const EventListBase &rhs, const double tolTof, const double tolWeight,
                        const int64_t tolPulse) const  ;
     WeightedEvent getEvent(size_t event_number)  ;

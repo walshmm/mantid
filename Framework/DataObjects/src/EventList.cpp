@@ -46,7 +46,7 @@ using namespace Mantid::API;
 /// Constructor (empty)
 // EventWorkspace is always histogram data and so is thus EventList
 EventList::EventList() {
-  this->eventList = EventListTofEvent();
+  this->eventList = std::make_shared<EventListTofEvent>();
 }
 
 /** Constructor with a MRU list
@@ -54,12 +54,12 @@ EventList::EventList() {
  * @param specNo :: the spectrum number for the event list
  */
 EventList::EventList(EventWorkspaceMRU *mru, specnum_t specNo) {
-  this->eventList = EventListTofEvent(mru, specNo);
+  this->eventList = std::make_shared<EventListTofEvent>(mru, specNo);
 }
 
 /** Constructor copying from an existing event list
  * @param rhs :: EventList object to copy*/
-EventList::EventList(const EventList &rhs) : IEventList(rhs), m_histogram(rhs.m_histogram), mru{nullptr} {
+EventList::EventList(const EventList &rhs) : IEventList(rhs){
   // Note that operator= also assigns m_histogram, but the above use of the copy
   // constructor avoid a memory allocation and is thus faster.
   this->operator=(rhs);
@@ -68,25 +68,25 @@ EventList::EventList(const EventList &rhs) : IEventList(rhs), m_histogram(rhs.m_
 /** Constructor, taking a vector of events.
  * @param events :: Vector of TofEvent's */
 EventList::EventList(const std::vector<TofEvent> &events){
-  this->eventList = EventListTofEvent(events);
+  this->eventList = std::make_shared<EventListTofEvent>(events);
 }
 
 /** Constructor, taking a vector of events.
  * @param events :: Vector of WeightedEvent's */
 EventList::EventList(const std::vector<WeightedEvent> &events){
-  this->eventList = EventListWeightedEvent(events);
+  this->eventList = std::make_shared<EventListWeightedEvent>(events);
 }
 
 /** Constructor, taking a vector of events.
  * @param events :: Vector of WeightedEventNoTime's */
 EventList::EventList(const std::vector<WeightedEventNoTime> &events) {
-  this->eventList = EventListWeightedEventNoTime(events);
+  this->eventList = std::make_shared<EventListWeightedEventNoTime>(events);
 }
 
 /** Constructor, taking a vector of events.
  * @param events :: Vector of TofEventNoTime's */
 EventList::EventList(const std::vector<TofEventNoTime> &events) {
-  this->eventList = EventListTofEventNoTime(events);
+  this->eventList = std::make_shared<EventListTofEventNoTime>(events);
 }
 
 /// Destructor
@@ -102,15 +102,7 @@ EventList::~EventList() {
 }
 
 /// Copy data from another EventList, via ISpectrum reference.
-void EventList::copyDataFrom(const ISpectrum &source) { this->eventList->copyDataInto(source); }
-
-/// Used by copyDataFrom for dynamic dispatch for its `source`.
-void EventList::copyDataInto(EventList &sink) const {
-  this->eventList->copyDataInto(sink);
-}
-
-/// Used by Histogram1D::copyDataFrom for dynamic dispatch for `other`.
-void EventList::copyDataInto(Histogram1D &sink) const { this->eventList->copyDataInto(sink); }
+void EventList::copyDataFrom(const ISpectrum &source) { this->eventList->copyDataInto(&source); }
 
 // --------------------------------------------------------------------------
 /** Create an EventList from a histogram. This converts bins to weighted
@@ -138,7 +130,7 @@ void EventList::createFromHistogram(const ISpectrum *inSpec, bool GenerateZeros,
  * @return reference to this
  * */
 EventList &EventList::operator=(const EventList &rhs) {
-  return this->eventList = rhs;
+  return *(this->eventList) = *(rhs.eventList);
 }
 
 // --------------------------------------------------------------------------
@@ -147,7 +139,7 @@ EventList &EventList::operator=(const EventList &rhs) {
  * @return reference to this
  * */
 EventList &EventList::operator+=(const TofEvent &event) {
-  this->eventList+=event;
+  *(this->eventList)+=event;
   return *this;
 }
 
@@ -159,7 +151,7 @@ EventList &EventList::operator+=(const TofEvent &event) {
  * @return reference to this
  * */
 EventList &EventList::operator+=(const std::vector<TofEvent> &more_events) {
-  this->eventList+=more_events;
+  *(this->eventList)+=more_events;
   return *this;
 }
 
@@ -172,7 +164,7 @@ EventList &EventList::operator+=(const std::vector<TofEvent> &more_events) {
  * @return reference to this
  * */
 EventList &EventList::operator+=(const WeightedEvent &event) {
-  this->eventList+=event;
+  *(this->eventList)+=event;
   return *this;
 }
 
@@ -185,7 +177,7 @@ EventList &EventList::operator+=(const WeightedEvent &event) {
  * @return reference to this
  * */
 EventList &EventList::operator+=(const std::vector<WeightedEvent> &more_events) {
-  this->eventList=more_events;
+  *(this->eventList)=more_events;
   return *this;
 }
 
@@ -198,7 +190,7 @@ EventList &EventList::operator+=(const std::vector<WeightedEvent> &more_events) 
  * @return reference to this
  * */
 EventList &EventList::operator+=(const std::vector<WeightedEventNoTime> &more_events) {
-  this->eventList+= more_events;
+  *(this->eventList)+= more_events;
   return *this;
 }
 
@@ -212,7 +204,7 @@ EventList &EventList::operator+=(const std::vector<WeightedEventNoTime> &more_ev
  * @return reference to this
  * */
 EventList &EventList::operator+=(const EventList &more_events) {
-  this->eventList+=more_events;
+  *(this->eventList)+=more_events;
   return *this;
 }
 
@@ -225,7 +217,7 @@ EventList &EventList::operator+=(const EventList &more_events) {
  * @return reference to this
  * */
 EventList &EventList::operator-=(const EventList &more_events) {
-  this->eventList-=more_events;
+  *(this->eventList)-=more_events;
   // NOTE: What to do about detector ID's?
   return *this;
 }
@@ -236,14 +228,14 @@ EventList &EventList::operator-=(const EventList &more_events) {
  * @return :: true if equal.
  */
 bool EventList::operator==(const EventList &rhs) const {
-  return this->eventList==rhs;
+  return *(this->eventList)==*(rhs.eventList.get());
 }
 
 /** Inequality comparator
  * @param rhs :: other EventList to compare
  * @return :: true if not equal.
  */
-bool EventList::operator!=(const EventList &rhs) const { return this->eventList!=rhs; }
+bool EventList::operator!=(const EventList &rhs) const { return *(this->eventList)!=*(rhs.eventList.get()); }
 
 bool EventList::equals(const EventList &rhs, const double tolTof, const double tolWeight,
                        const int64_t tolPulse) const {
@@ -264,7 +256,7 @@ void EventList::switchTo(EventType newType) {
   //TODO: may be a nessessary evil, will think of a way to remove this another time
   switch (newType) {
   case TOF:
-    if (eventType != TOF)
+    if (getEventType() != TOF)
       throw std::runtime_error("EventListBase::switchTo() called on an EventListBase "
                                "with weights to go down to TofEvent's. This "
                                "would remove weight information and therefore "
@@ -284,6 +276,27 @@ void EventList::switchTo(EventType newType) {
     break;
   }
 }
+
+void EventList::switchToUnweightedEvents() {
+  throw std::runtime_error("unimplemented function");
+}
+
+// -----------------------------------------------------------------------------------------------
+/** Switch the EventList to use WeightedEvents instead
+ * of TofEvent.
+ */
+void EventList::switchToWeightedEvents() {
+  throw std::runtime_error("unimplemented function");
+}
+
+// -----------------------------------------------------------------------------------------------
+/** Switch the EventList to use WeightedEventNoTime's instead
+ * of TofEvent.
+ */
+void EventList::switchToWeightedEventsNoTime() {
+  throw std::runtime_error("unimplemented function");
+}
+
 
 
 // ==============================================================================================

@@ -17,6 +17,16 @@ class DLLExport EventListWeightedEventNoTime :
 public EventListBase, 
 public EventListWeightErrorTofFunctionsTemplate<WeightedEventNoTime, EventListWeightedEventNoTime>,
 public EventListPermutationsMinusHelperFunctions<WeightedEventNoTime> {
+    // using iHateTypeDefs = EventListWeightErrorTofFunctionsTemplate<WeightedEventNoTime, EventListWeightedEventNoTime>::EventListWeightErrorFunctionsTemplate<WeightedEventNoTime, EventListWeightedEventNoTime>::EventListWeightFunctionsTemplate<WeightedEventNoTime, EventListWeightedEventNoTime>::EventListBaseFunctionsTemplate<WeightedEventNoTime, EventListWeightedEventNoTime>;
+
+    // using  EventListWeightErrorTofFunctionsTemplate<WeightedEventNoTime, EventListWeightedEventNoTime>::EventListWeightErrorFunctionsTemplate<WeightedEventNoTime, EventListWeightedEventNoTime>::EventListWeightFunctionsTemplate<WeightedEventNoTime, EventListWeightedEventNoTime>::EventListBaseFunctionsTemplate<WeightedEventNoTime, EventListWeightedEventNoTime>::events;
+
+    // // using  iHateTypeDefs::events;
+    // using  iHateTypeDefs::getNumberEvents;
+
+    // using EventListWeightFunctionsTemplate<WeightedEventNoTime, EventListWeightedEventNoTime>::getWeightsHelper;
+    public:
+    EventListWeightedEventNoTime(const std::vector<WeightedEventNoTime> &events);
     EventListWeightedEventNoTime();
     bool equals(const EventListBase &rhs, const double tolTof, const double tolWeight,
                        const int64_t tolPulse) const  ;
@@ -53,9 +63,9 @@ public EventListPermutationsMinusHelperFunctions<WeightedEventNoTime> {
                                            std::map<int, EventListBase *> outputs) const  ;
     EventListWeightedEventNoTime &operator-=(const EventListBase &more_events);
 
-    // private:
-    //  /// List of Events
-    // std::vector<WeightedEventNoTime> events;
+    private:
+     /// List of Events
+    std::vector<WeightedEventNoTime> events;
 };
 
 } // namespace DataObjects

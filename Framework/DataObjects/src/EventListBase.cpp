@@ -49,38 +49,47 @@ using namespace Mantid::API;
 
 /// Constructor (empty)
 // EventWorkspace is always histogram data and so is thus EventListBase
-EventListBase::EventListBase(){}
+EventListBase::EventListBase(): m_histogram(HistogramData::Histogram::XMode::BinEdges, HistogramData::Histogram::YMode::Counts), eventType(TOF),
+      order(UNSORTED), mru(nullptr)
+      {}
 
 /** Constructor with a MRU list
  * @param mru :: pointer to the MRU of the parent EventWorkspace
  * @param specNo :: the spectrum number for the event list
  */
-EventListBase::EventListBase(EventWorkspaceMRU *mru, specnum_t specNo){}
+EventListBase::EventListBase(EventWorkspaceMRU *mru, specnum_t specNo): 
+      m_histogram(HistogramData::Histogram::XMode::BinEdges, HistogramData::Histogram::YMode::Counts), eventType(TOF),
+      order(UNSORTED), mru(mru) {}
 
 /** Constructor copying from an existing event list
  * @param rhs :: EventListBase object to copy*/
-EventListBase::EventListBase(const EventListBase &rhs){
+EventListBase::EventListBase(const EventListBase &rhs):  m_histogram(rhs.m_histogram), mru{nullptr} {
 
 }
 
 /** Constructor, taking a vector of events->
  * @param events :: Vector of TofEvent's */
-EventListBase::EventListBase(const std::vector<TofEvent> &events){
+EventListBase::EventListBase(const std::vector<TofEvent> &events) 
+: m_histogram(HistogramData::Histogram::XMode::BinEdges, HistogramData::Histogram::YMode::Counts), eventType(TOF),
+      mru(nullptr) {
 }
 
 /** Constructor, taking a vector of events->
  * @param events :: Vector of WeightedEvent's */
-EventListBase::EventListBase(const std::vector<WeightedEvent> &events){
+EventListBase::EventListBase(const std::vector<WeightedEvent> &events)
+: m_histogram(HistogramData::Histogram::XMode::BinEdges, HistogramData::Histogram::YMode::Counts), mru(nullptr){
 }
 
 /** Constructor, taking a vector of events->
  * @param events :: Vector of WeightedEventNoTime's */
-EventListBase::EventListBase(const std::vector<WeightedEventNoTime> &events) {
+EventListBase::EventListBase(const std::vector<WeightedEventNoTime> &events)
+: m_histogram(HistogramData::Histogram::XMode::BinEdges, HistogramData::Histogram::YMode::Counts), mru(nullptr) {
 }
 
 /** Constructor, taking a vector of events->
  * @param events :: Vector of TofEventNoTime's */
-EventListBase::EventListBase(const std::vector<TofEventNoTime> &events){
+EventListBase::EventListBase(const std::vector<TofEventNoTime> &events) 
+: m_histogram(HistogramData::Histogram::XMode::BinEdges, HistogramData::Histogram::YMode::Counts), mru(nullptr){
 }
 
 /// Destructor

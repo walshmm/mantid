@@ -8,12 +8,13 @@ template <typename T, typename SELF>
 class EventListErrorFunctionsTemplate : public EventListBaseFunctionsTemplate<T, SELF>
 {
 public:
+// using BASE = typename EventListErrorFunctionsTemplate<T, SELF>::EventListBaseFunctionsTemplate<T, SELF>;
 
 EventListErrorFunctionsTemplate(std::shared_ptr<std::vector<T>> events): 
 EventListBaseFunctionsTemplate<T, SELF>(events){}
   
 
-private:
+protected:
 
     // --------------------------------------------------------------------------
     /** Get the weight error member of all events in a list
@@ -29,11 +30,12 @@ private:
     }
 
     friend T;
-    // EventListErrorFunctionsTemplate() = default;
+    friend SELF;
+    EventListErrorFunctionsTemplate() = default;
 
-    inline T & as_underlying()
+    inline SELF & as_underlying()
     {
-        return static_cast<T&>(*this);
+        return static_cast<SELF&>(*this);
     }
 };
 }

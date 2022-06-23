@@ -315,7 +315,7 @@ public:
   void generateCountsHistogramPulseTime(const double &xMin, const double &xMax, MantidVec &Y,
                                         const double TofMin = std::numeric_limits<double>::lowest(),
                                         const double TofMax = std::numeric_limits<double>::max()) const;
-mutable std::shared_ptr<EventList> eventList;
+mutable std::unique_ptr<EventList> eventList;
 protected:
   void checkAndSanitizeHistogram(HistogramData::Histogram &histogram) override;
   void checkWorksWithPoints() const override;

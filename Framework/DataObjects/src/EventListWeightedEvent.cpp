@@ -6,15 +6,13 @@ using Types::Core::DateAndTime;
 using Types::Event::TofEvent;
 using namespace Mantid::API;
 
-using  EventListWeightErrorPulsetimeTofFunctionsTemplate
-    ::EventListWeightErrorTofFunctionsTemplate
-    ::EventListWeightErrorFunctionsTemplate
-    ::EventListWeightFunctionsTemplate
-    ::EventListBaseFunctionsTemplate
-    ::events;
+EventListWeightedEvent::EventListWeightedEvent() {
+}
 
-EventListWeightedEvent::EventListWeightedEvent() : EventListWeightErrorPulsetimeTofFunctionsTemplate(std::make_shared<std::vector<WeightedEvent>>()){
-    events = EventListWeightErrorPulsetimeTofFunctionsTemplate::events;
+/** Constructor, taking a vector of events.
+ * @param events :: Vector of WeightedEvent's */
+EventListWeightedEvent::EventListWeightedEvent(const std::vector<WeightedEvent> &events){
+  this->events->assign(events.begin(), events.end());
 }
 
 /** Constructor copying from an existing event list
@@ -82,7 +80,7 @@ void EventListWeightedEvent::sortTimeAtSample(const double &tofFactor, const dou
     // Perform sort.
 
     CompareTimeAtSample<WeightedEvent> comparitor(tofFactor, tofShift);
-    tbb::parallel_sort(events->begin(), events->end(), comparitor);
+    tbb::parallel_sort(this->events->begin(), this->events->end(), comparitor);
     // Save the order to avoid unnecessary re-sorting.
     this->order = TIMEATSAMPLE_SORT;    
 }

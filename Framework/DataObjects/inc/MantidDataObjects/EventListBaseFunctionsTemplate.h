@@ -3,25 +3,37 @@
 
 #include "MantidDataObjects/EventList.h"
 #include "MantidAPI/IEventList.h"
+#include "MantidDataObjects/Histogram1D.h"
 #include "MantidDataObjects/Events.h"
 #include "MantidKernel/MultiThreaded.h"
 #include "MantidKernel/System.h"
 #include "MantidKernel/cow_ptr.h"
 #include "MantidDataObjects/CompareTimeAtSample.h"
+#include "MantidDataObjects/EventWorkspaceMRU.h"
 #include <iosfwd>
 #include <memory>
 #include <vector>
 
+#ifdef _MSC_VER
+// qualifier applied to function type has no meaning; ignored
+#pragma warning(disable : 4180)
+#endif
+#include "tbb/parallel_sort.h"
+#ifdef _MSC_VER
+#pragma warning(default : 4180)
+#endif
+
 namespace Mantid {
 namespace DataObjects {
+
+using namespace Mantid::API;
+
 template <typename T, typename SELF>
 class EventListBaseFunctionsTemplate
 {
-  public:
+  using ThisClass = EventListBaseFunctionsTemplate<T, SELF>;
 
-  EventListBaseFunctionsTemplate(std::shared_ptr<std::vector<T>> events) {
-    this->events = events;
-  }
+  public:
 
   void checkAndSanitizeHistogram(HistogramData::Histogram &histogram) {
   if (histogram.xMode() != HistogramData::Histogram::XMode::BinEdges)
@@ -51,14 +63,14 @@ HistogramData::Histogram &mutableHistogramRef() {
  * @param factor :: conversion factor (e.g. multiply TOF by this to get
  * d-spacing)
  */
-void scaleTof(const double factor) { this->convertTof(factor, 0.0); }
+void scaleTof(const double factor) { as_underlying().convertTof(factor, 0.0); }
 
 // --------------------------------------------------------------------------
 /** Add an offset to the TOF of each event in the list.
  *
  * @param offset :: The value to shift the time-of-flight by
  */
-void addTof(const double offset) { this->convertTof(1.0, offset); }
+void addTof(const double offset) { as_underlying().convertTof(1.0, offset); }
 
 
 // --------------------------------------------------------------------------
@@ -79,7 +91,7 @@ void  generateCountsHistogramPulseTime(const MantidVec &X, MantidVec &Y) const {
   }
 
   // Sort the events by pulsetime
-  this->sortPulseTime();
+  as_underlying().sortPulseTime();
   // Clear the Y data, assign all to 0.
   Y.resize(x_size - 1, 0);
 
@@ -104,10 +116,10 @@ void  generateCountsHistogramPulseTime(const MantidVec &X, MantidVec &Y) const {
  * @param TOF_min -- min TOF to include in histogram.
  * @param TOF_max -- max TOF to constrain values included in histogram.
  */
-void  generateCountsHistogramPulseTime(const double &xMin, const double &xMax, MantidVec &Y,
+void generateCountsHistogramPulseTime(const double &xMin, const double &xMax, MantidVec &Y,
                                                  const double TOF_min, const double TOF_max) const {
 
-  if (this->events->empty())
+  if (as_underlying().events->empty())
     return;
 
   size_t nBins = Y.size();
@@ -141,7 +153,7 @@ void  generateCountsHistogramTimeAtSample(const MantidVec &X, MantidVec &Y, cons
   }
 
   // Sort the events by pulsetime
-  this->sortTimeAtSample(tofFactor, tofOffset);
+  as_underlying().sortTimeAtSample(tofFactor, tofOffset);
   // Clear the Y data, assign all to 0.
   Y.resize(x_size - 1, 0);
 
@@ -168,7 +180,7 @@ void  generateCountsHistogram(const MantidVec &X, MantidVec &Y) const {
   }
 
   // Sort the events by tof
-  this->sortTof();
+  as_underlying().sortTof();
   // Clear the Y data, assign all to 0.
   Y.resize(x_size - 1, 0);
 
@@ -209,10 +221,10 @@ void  generateErrorsHistogram(const MantidVec &Y, MantidVec &E) const {
  */
 void generateHistogram(const MantidVec &X, MantidVec &Y, MantidVec &E, bool skipError) const {
   // All types of weights need to be sorted by TOF
-  this->sortTof();
-  this->generateCountsHistogram(X, Y);
+  as_underlying().sortTof();
+  as_underlying().generateCountsHistogram(X, Y);
   if (!skipError)
-    this->generateErrorsHistogram(Y, E);
+    as_underlying().generateErrorsHistogram(Y, E);
 }
 
 // ==============================================================================================
@@ -336,7 +348,7 @@ Kernel::cow_ptr<HistogramData::HistogramY>  sharedY() const {
   if (!yData) {
     MantidVec Y;
     MantidVec E;
-    this->generateHistogram(readX(), Y, E);
+    as_underlying().generateHistogram(readX(), Y, E);
 
     // Create the MRU object
     yData = Kernel::make_cow<HistogramData::HistogramY>(std::move(Y));
@@ -367,7 +379,7 @@ Kernel::cow_ptr<HistogramData::HistogramE>  sharedE() const {
     // Now use that to get E -- Y values are generated from another function
     MantidVec Y_ignored;
     MantidVec E;
-    this->generateHistogram(readX(), Y_ignored, E);
+    as_underlying().generateHistogram(readX(), Y_ignored, E);
     eData = Kernel::make_cow<HistogramData::HistogramE>(std::move(E));
 
     // Lets save it in the MRU
@@ -418,11 +430,11 @@ size_t histogram_size() const {
 
 // --------------------------------------------------------------------------
 /** Return true if the event list is sorted by TOF */
-bool isSortedByTof() const { return (this->order == TOF_SORT); }
+bool isSortedByTof() const { return (as_underlying().order == TOF_SORT); }
 
 // --------------------------------------------------------------------------
 /** Return the type of sorting used in this event list */
-EventSortType getSortType() const { return this->order; }
+EventSortType getSortType() const { return as_underlying().order; }
 
 // --------------------------------------------------------------------------
 /** Reverse the histogram boundaries and the associated events if they are
@@ -436,8 +448,8 @@ void reverse() {
   std::reverse(x.begin(), x.end());
 
   // flip the events if they are tof sorted
-  if (this->isSortedByTof()) {
-    std::reverse(this->events.begin(), this->events.end());
+  if (as_underlying().isSortedByTof()) {
+    std::reverse(as_underlying().events.begin(), as_underlying().events.end());
     // And we are still sorted! :)
   }
   // Otherwise, do nothing. If it was sorted by pulse time, then it still is
@@ -452,14 +464,14 @@ void reverse() {
  * @return the number of events in the list.
  *  */
 size_t getNumberEvents() const {
-    return this->events.size();
+    return as_underlying().events.size();
 }
 
 /**
  * Much like stl containers, returns true if there is nothing in the event list.
  */
 bool empty() const {
-  return this->events.empty();
+  return as_underlying().events.empty();
 }
 
 // --------------------------------------------------------------------------
@@ -467,7 +479,7 @@ bool empty() const {
  * SHOULD ONLY BE USED IN TESTS or if you know what you are doing.
  * @param order :: sort order to set.
  */
-void setSortOrder(const EventSortType order) const { this->order = order; }
+void setSortOrder(const EventSortType order) const { as_underlying().order = order; }
 
 /** Sets the MRU list for this event list
  *
@@ -488,7 +500,7 @@ std::vector<T> & getWeightedEventsNoTime() {
     throw std::runtime_error(" getWeightedEvents() called for an "
                              "EventListBase not of type WeightedEventNoTime. Use "
                              "getEvents() or getWeightedEvents().");
-  return this->events;
+  return as_underlying().events;
 }
 
 /** Return the list of WeightedEventNoTime contained.
@@ -501,7 +513,7 @@ const std::vector<T> & getWeightedEventsNoTime() const {
     throw std::runtime_error(" getWeightedEventsNoTime() called for "
                              "an EventListBase not of type WeightedEventNoTime. "
                              "Use getEvents() or getWeightedEvents().");
-  return this->events;
+  return as_underlying().events;
 }
 
 
@@ -517,7 +529,7 @@ std::vector<T> & getWeightedEvents() {
     throw std::runtime_error(" getWeightedEvents() called for an "
                              "EventListBase not of type WeightedEvent. Use "
                              "getEvents() or getWeightedEventsNoTime().");
-  return this->events;
+  return as_underlying().events;
 }
 
 /** Return the list of WeightedEvent contained.
@@ -532,7 +544,7 @@ const std::vector<T> & getWeightedEvents() const {
     throw std::runtime_error(" getWeightedEvents() called for an "
                              "EventListBase not of type WeightedEvent. Use "
                              "getEvents() or getWeightedEventsNoTime().");
-  return this->events;
+  return as_underlying().events;
 }
 
 /** Return the list of TofEvents contained.
@@ -547,7 +559,7 @@ std::vector<T> & getEvents() {
     throw std::runtime_error(" getEvents() called for an EventListBase "
                              "that has weights. Use getWeightedEvents() or "
                              "getWeightedEventsNoTime().");
-  return this->events;
+  return as_underlying().events;
 }
 
 /** Return the const list of TofEvents contained.
@@ -562,7 +574,7 @@ const std::vector<T> & getEvents() const {
     throw std::runtime_error(" getEvents() called for an EventListBase "
                              "that has weights. Use getWeightedEvents() or "
                              "getWeightedEventsNoTime().");
-  return this->events;
+  return as_underlying().events;
 }
 
 EventType getEventType() const { return eventType; }
@@ -570,7 +582,7 @@ EventType getEventType() const { return eventType; }
  * @param rhs :: other EventListBase to compare
  * @return :: true if not equal.
  */
-bool operator!=(const SELF &rhs) const { return (!this->operator==(rhs)); }
+bool operator!=(const SELF &rhs) const { return (!as_underlying().operator==(rhs)); }
 
   // --------------------------------------------------------------------------
 /** Equality operator between EventListBase's
@@ -578,7 +590,7 @@ bool operator!=(const SELF &rhs) const { return (!this->operator==(rhs)); }
  * @return :: true if equal.
  */
 bool operator==(const SELF &rhs) const {
-  return this->getNumberEvents() == rhs.getNumberEvents()
+  return as_underlying().getNumberEvents() == rhs.getNumberEvents()
   && *events == *(rhs.events);
 }
 
@@ -593,11 +605,11 @@ bool operator==(const SELF &rhs) const {
  * */
 SELF &operator+=(const SELF &more_events) {
   // We'll let the += operator for the given vector of event lists handle it
-  this->operator+=(more_events->events);
+  as_underlying().operator+=(more_events->events);
 
 
   // No guaranteed order
-  this->order = UNSORTED;
+  as_underlying().order = UNSORTED;
   // Do a union between the detector IDs of both lists
   addDetectorIDs(more_events->getDetectorIDs());
 
@@ -615,15 +627,15 @@ SELF &operator+=(const std::vector<T> &more_events) {
 
   // case TOF:
   //   // Simply push the events
-  //   this->events->insert(this->events->end(), more_events->begin(), more_events->end());
+  //   as_underlying().events->insert(as_underlying().events->end(), more_events->begin(), more_events->end());
   //   break;
 
-  this->events->reserve(this->events->size() + more_events->size());
+  as_underlying().events->reserve(as_underlying().events->size() + more_events->size());
   for (const auto &event : more_events) {
-    this->events->emplace_back(event);
+    as_underlying().events->emplace_back(event);
   }
 
-  this->order = UNSORTED;
+  as_underlying().order = UNSORTED;
   return *this;
 }
 
@@ -633,8 +645,8 @@ SELF &operator+=(const std::vector<T> &more_events) {
  * @return reference to this
  * */
 SELF &operator+=(const T &event) {
-  this->events->emplace_back(event);
-  this->order = UNSORTED;
+  as_underlying().events->emplace_back(event);
+  as_underlying().order = UNSORTED;
   return *this;
 }
 
@@ -661,17 +673,17 @@ SELF &operator=(const T &rhs) {
 void copyDataFrom(const ISpectrum &source) { source.copyDataInto(*this); }
 
 /// Mask the spectrum to this value. Removes all events->
-void clearData() { this->clear(false); }
+void clearData() { as_underlying().clear(false); }
   /** Clear the list of events and any
  * associated detector ID's.
  * */
 void clear(const bool removeDetIDs) {
   if (mru)
     mru->deleteIndex(this);
-  this->events.clear();
-  std::vector<T>().swap(this->events); // STL Trick to release memory
+  as_underlying().events.clear();
+  std::vector<T>().swap(as_underlying().events); // STL Trick to release memory
   if (removeDetIDs)
-    this->clearDetectorIDs();
+    as_underlying().clearDetectorIDs();
 }
 
 
@@ -683,7 +695,7 @@ void clear(const bool removeDetIDs) {
  * @param num :: number of events that will be in this EventListBase
  */
 void reserve(size_t num) {
-  this->events.reserve(num);
+  as_underlying().events.reserve(num);
 }
 
   // --------------------------------------------------------------------------
@@ -695,120 +707,34 @@ void reserve(size_t num) {
    * */
   inline void addEventQuickly(const T &event) {
     events->emplace_back(event);
-    this->order = UNSORTED;
+    as_underlying().order = UNSORTED;
   }
-
-  // --------------------------------------------------------------------------
-/** Compress the event list by grouping events with the same
- * TOF (within a given tolerance). PulseTime is ignored.
- * The event list will be switched to WeightedEventNoTime.
- *
- * @param tolerance :: how close do two event's TOF have to be to be considered
- *the same.
- * @param destination :: EventListBase that will receive the compressed events-> Can
- *be == this.
- */
-
-//NOTE: Dont like that this is operating with a parent type as a parameter
-void compressEvents(double tolerance, EventList *destination) {
-  if (!this->empty()) {
-    this->sortTof();
-
-    //in the wrapper do this before calling compress Events
-    destination->clear()
-    destination->switchTo(WEIGHTED_NOTIME)
-
-
-    //should work because the wrapper's equal operator refers to the wrapped EventList for equality
-    if (destination == this) {
-            // Put results in a temp output
-            std::vector<WeightedEventNoTime> out;
-            compressEventsHelper(*(this->events), out, tolerance);
-            // Put it back
-            this->events->swap(out);
-        } else {
-            compressEventsHelper(*(this->events), destination->events, tolerance);
-    }
-    
-  }
-  // In all cases, you end up WEIGHTED_NOTIME.
-  destination->eventType = WEIGHTED_NOTIME;
-  // The sort is still valid!
-  destination->order = TOF_SORT;
-  // Empty out storage for vectors that are now unused.
-  destination->clearUnused();
-}
-
-void compressFatEvents(const double tolerance, const Mantid::Types::Core::DateAndTime &timeStart,
-                                  const double seconds, EventListBase *destination) {
-                                      
-  // only worry about non-empty EventLists
-  if (!this->empty()) {
-    if (destination == this) {
-      // Put results in a temp output
-      std::vector<WeightedEvent> out;
-      compressFatEventsHelper(*(this->events), out, tolerance, timeStart, seconds);
-      // Put it back
-      *(this->events).swap(out);
-    } else {
-      compressFatEventsHelper(*(this->events), destination->events, tolerance, timeStart, seconds);
-    }
-  }
-  // In all cases, you end up WEIGHTED_NOTIME.
-  destination->eventType = WEIGHTED;
-  // The sort order is pulsetimetof as we've compressed out the tolerance
-  destination->order = PULSETIMETOF_SORT;
-  // Empty out storage for vectors that are now unused.
-  destination->clearUnused();
-}
 
 // --------------------------------------------------------------------------
 /** Sort events by TOF in one thread */
 void sortTof() const {
   // nothing to do
-  if (this->order == TOF_SORT)
+  if (as_underlying().order == TOF_SORT)
     return;
 
   // Avoid sorting from multiple threads
   std::lock_guard<std::mutex> _lock(m_sortMutex);
   // If the list was sorted while waiting for the lock, return.
-  if (this->order == TOF_SORT)
+  if (as_underlying().order == TOF_SORT)
     return;
 
   // TODO determine how these are setup to compare
 
   tbb::parallel_sort(events->begin(), events->end());
   // Save the order to avoid unnecessary re-sorting.
-  this->order = TOF_SORT;
+  as_underlying().order = TOF_SORT;
 }
 
 protected:
 
-    //Should be a shared pointer that gets passed down 
-    //to parents so they all point to the same list
-    std::shared_ptr<std::vector<T>> events;
-
-
-    /// Histogram object holding the histogram data. Currently only X.
-    HistogramData::Histogram m_histogram;
-
-    /// What type of event is in our list.
-    Mantid::API::EventType eventType;
-
-    /// Last sorting order
-    mutable EventSortType order;
-
-    /// MRU lists of the parent EventWorkspace
-    mutable EventWorkspaceMRU *mru;
-
-    /// Mutex that is locked while sorting an event list
-    mutable std::mutex m_sortMutex;
-
-
-
 // private:
 
-const Histogram &histogramRef() const override { return m_histogram; }
+const HistogramData::Histogram &histogramRef() const { return m_histogram; }
 
 /// Used by Histogram1D::copyDataFrom for dynamic dispatch for `other`.
 void copyDataInto(Histogram1D &sink) const { sink.setHistogram(histogram()); }
@@ -831,7 +757,7 @@ void copyDataInto(T &sink) const {
  */
 std::vector<double> getWeightErrors() const {
   std::vector<double> weightErrors;
-  this->getWeightErrors(weightErrors);
+  as_underlying().getWeightErrors(weightErrors);
   return weightErrors;
 }
 
@@ -840,8 +766,8 @@ std::vector<double> getWeightErrors() const {
  */
 void getWeightErrors(std::vector<double> &weightErrors) const {
   // Set the capacity of the vector to avoid multiple resizes
-  weightErrors.reserve(this->events.size());
-  weightErrors.assign(this->events.size(), 1.0);
+  weightErrors.reserve(as_underlying().events.size());
+  weightErrors.assign(as_underlying().events.size(), 1.0);
 }
 
 /** Get the weight of each event in this EventListBase.
@@ -850,7 +776,7 @@ void getWeightErrors(std::vector<double> &weightErrors) const {
  */
 std::vector<double> getWeights() const {
   std::vector<double> weights;
-  this->getWeights(weights);
+  as_underlying().getWeights(weights);
   return weights;
 }
 /** Fill a vector with the list of Weights
@@ -858,9 +784,9 @@ std::vector<double> getWeights() const {
  */
 void getWeights(std::vector<double> &weights) const {
   // Set the capacity of the vector to avoid multiple resizes
-  weights.reserve(this->events.size());
+  weights.reserve(as_underlying().events.size());
     // not a weighted event type, return 1.0 for all.
-  weights.assign(this->events.size(), 1.0);
+  weights.assign(as_underlying().events.size(), 1.0);
 }
 
   // --------------------------------------------------------------------------
@@ -897,11 +823,11 @@ std::size_t maskConditionHelper(std::vector<T> &events, const std::vector<bool> 
 
 
 
-    // EventListBaseFunctionsTemplate() = default;
+    EventListBaseFunctionsTemplate() = default;
 
-    inline T & as_underlying()
+    inline SELF & as_underlying()
     {
-        return static_cast<T&>(*this);
+        return static_cast<SELF&>(*this);
     }
 };
 }

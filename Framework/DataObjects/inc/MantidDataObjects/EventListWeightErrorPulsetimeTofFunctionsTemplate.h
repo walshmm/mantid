@@ -11,16 +11,16 @@ using Types::Core::DateAndTime;
 template <typename T, typename SELF>
 class EventListWeightErrorPulsetimeTofFunctionsTemplate : public EventListWeightErrorTofFunctionsTemplate<T, SELF>, public EventListPulsetimeTofFunctionsTemplate<T, SELF>
 {
-    using EventListWeightErrorTofFunctionsTemplate<T, SELF>
-    ::EventListWeightErrorFunctionsTemplate<T, SELF>
-    ::EventListWeightFunctionsTemplate<T, SELF>
-    ::EventListBaseFunctionsTemplate<T, SELF>
-    ::events;
+
+    using ThisClass = EventListWeightErrorPulsetimeTofFunctionsTemplate<T, SELF>;
   
   public:
-     EventListWeightErrorPulsetimeTofFunctionsTemplate(std::shared_ptr<std::vector<T>> events): 
-  EventListWeightErrorTofFunctionsTemplate<T, SELF>(events), 
-  EventListPulsetimeTofFunctionsTemplate<T, SELF>(events){}
+  // using EventListWeightErrorTofFunctionsTemplateBASE = typename EventListWeightErrorTofFunctionsTemplate<T, SELF>::EventListWeightErrorTofFunctionsTemplateBASE;
+  // using EventListWeightErrorPulsetimeTofFunctionsTemplateBASE = typename EventListWeightErrorPulsetimeTofFunctionsTemplate<T, SELF>::EventListWeightErrorTofFunctionsTemplateBASE;
+  // using EventListWeightErrorPulsetimeTofFunctionsTemplateBASE::events;
+  // using EventListWeightErrorPulsetimeTofFunctionsTemplateBASE::m_histogram;
+  // using EventListWeightErrorPulsetimeTofFunctionsTemplateBASE::eventType;
+
 
 protected:
     // --------------------------------------------------------------------------
@@ -149,12 +149,36 @@ inline void compressFatEventsHelper(const std::vector<T> &events, std::vector<We
   }
 }
 
-    friend T;
-    // EventListWeightErrorPulsetimeTofFunctionsTemplate() = default;
+void compressFatEvents(const double tolerance, const Mantid::Types::Core::DateAndTime &timeStart,
+                                  const double seconds, EventListBase *destination) {
+                                      
+  // only worry about non-empty EventLists
+  if (!as_underlying().empty()) {
+    if (destination == this) {
+      // Put results in a temp output
+      std::vector<WeightedEvent> out;
+      compressFatEventsHelper(*(as_underlying().events), out, tolerance, timeStart, seconds);
+      // Put it back
+      *(as_underlying().events).swap(out);
+    } else {
+      compressFatEventsHelper(*(as_underlying().events), ((ThisClass*)destination)->events, tolerance, timeStart, seconds);
+    }
+  }
+  // In all cases, you end up WEIGHTED_NOTIME.
+  ((ThisClass*)destination)->eventType = WEIGHTED;
+  // The sort order is pulsetimetof as we've compressed out the tolerance
+  ((ThisClass*)destination)->order = PULSETIMETOF_SORT;
+  // Empty out storage for vectors that are now unused.
+  ((ThisClass*)destination)->clearUnused();
+}
 
-    inline T & as_underlying()
+    friend T;
+    friend SELF;
+    EventListWeightErrorPulsetimeTofFunctionsTemplate() = default;
+
+    inline SELF & as_underlying()
     {
-        return static_cast<T&>(*this);
+        return static_cast<SELF&>(*this);
     }
 };
 }

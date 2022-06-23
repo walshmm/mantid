@@ -1,6 +1,7 @@
 #pragma once
 
 #include "MantidDataObjects/EventListBaseFunctionsTemplate.h"
+#include "MantidDataObjects/Events.h"
 
 namespace Mantid {
 namespace DataObjects {
@@ -8,36 +9,42 @@ template <typename T, typename SELF>
 class EventListPulsetimeFunctionsTemplate : public EventListBaseFunctionsTemplate<T, SELF>
 {
 public:
+  // using BASE = typename EventListPulsetimeFunctionsTemplate<T, SELF>::EventListBaseFunctionsTemplate<T, SELF>;
+  // using BASE::events;
+  // using BASE::eventType;
+  // using BASE::m_histogram;
+  // using BASE::m_sortMutex;
 
   EventListPulsetimeFunctionsTemplate(std::shared_ptr<std::vector<T>> events): 
   EventListBaseFunctionsTemplate<T, SELF>(events){}
 
+using Mantid::Types::Core::DateAndTime;
 
 void sort(const EventSortType order) const {
   if (order == UNSORTED) {
     return; // don't bother doing anything. Why did you ask to unsort?
   } else if (order == PULSETIME_SORT) {
-    this->sortPulseTime();
+    as_underlying().sortPulseTime();
   } else {
-    throw runtime_error("Invalid sort type in EventListPulsetimeFunctionsTemplate::sort(EventSortType)");
+    throw std::runtime_error("Invalid sort type in EventListPulsetimeFunctionsTemplate::sort(EventSortType)");
   }
 }
 // --------------------------------------------------------------------------
 /** Sort events by Frame */
 void sortPulseTime() const {
-  if (this->order == PULSETIME_SORT)
+  if (as_underlying().order == PULSETIME_SORT)
     return; // nothing to do
 
   // Avoid sorting from multiple threads
-  std::lock_guard<std::mutex> _lock(m_sortMutex);
+  std::lock_guard<std::mutex> _lock(as_underlying().m_sortMutex);
   // If the list was sorted while waiting for the lock, return.
-  if (this->order == PULSETIME_SORT)
+  if (as_underlying().order == PULSETIME_SORT)
     return;
 
-  tbb::parallel_sort(events->begin(), events->end(), compareEventPulseTime);
+  tbb::parallel_sort(as_underlying().events->begin(), as_underlying().events->end(), compareEventPulseTime);
  
   // Save the order to avoid unnecessary re-sorting.
-  this->order = PULSETIME_SORT;
+  as_underlying().order = PULSETIME_SORT;
 }
 
 protected:
@@ -77,12 +84,12 @@ typename std::vector<T>::const_iterator findFirstPulseEvent(const std::vector<T>
  * @param seconds :: A set of values to shift the pulsetime by, in seconds
  */
 void addPulsetimes(const std::vector<double> &seconds) {
-  if (this->getNumberEvents() <= 0)
+  if (as_underlying().getNumberEvents() <= 0)
     return;
-  if (this->getNumberEvents() != seconds.size()) {
+  if (as_underlying().getNumberEvents() != seconds.size()) {
     throw std::runtime_error("");
   }
-  this->addPulsetimesHelper(*(this->events), seconds);
+  as_underlying().addPulsetimesHelper(*(as_underlying().events), seconds);
 }
 
 // --------------------------------------------------------------------------
@@ -91,11 +98,11 @@ void addPulsetimes(const std::vector<double> &seconds) {
  * @param seconds :: The value to shift the pulsetime by, in seconds
  */
 void addPulsetime(const double seconds) {
-  if (this->getNumberEvents() <= 0)
+  if (as_underlying().getNumberEvents() <= 0)
     return;
 
   // Convert the list
-  this->addPulsetimeHelper(*(this->events), seconds);
+  as_underlying().addPulsetimeHelper(*(as_underlying().events), seconds);
 }
 
 // --------------------------------------------------------------------------
@@ -133,21 +140,21 @@ void getPulseTimeMinMax(Mantid::Types::Core::DateAndTime &tMin,
   tMin = DateAndTime::maximum();
 
   // no events is a soft error
-  if (this->empty())
+  if (as_underlying().empty())
     return;
 
   // when events are ordered by pulse time just need the first/last values
-  if (this->order == PULSETIME_SORT) {
-    Min = this->events->begin()->pulseTime();
-    tMax = this->events->rbegin()->pulseTime();
+  if (as_underlying().order == PULSETIME_SORT) {
+    tMin = as_underlying().events->begin()->pulseTime();
+    tMax = as_underlying().events->rbegin()->pulseTime();
     return;
   }
 
   // now we are stuck with a linear search
-  size_t numEvents = this->events.size();
+  size_t numEvents = as_underlying().events.size();
   DateAndTime temp = tMax; // start with the smallest possible value
   for (size_t i = 0; i < numEvents; i++) {
-    temp = this->events[i].pulseTime();
+    temp = as_underlying().events[i].pulseTime();
     
     if (temp > tMax)
       tMax = temp;
@@ -165,19 +172,19 @@ DateAndTime getPulseTimeMax() const {
   DateAndTime tMax = DateAndTime::minimum();
 
   // no events is a soft error
-  if (this->empty())
+  if (as_underlying().empty())
     return tMax;
 
   // when events are ordered by pulse time just need the first value
-  if (this->order == PULSETIME_SORT) {
-    return this->events->rbegin()->pulseTime();
+  if (as_underlying().order == PULSETIME_SORT) {
+    return as_underlying().events->rbegin()->pulseTime();
   }
 
   // now we are stuck with a linear search
-  size_t numEvents = this->events.size();
+  size_t numEvents = as_underlying().events.size();
   DateAndTime temp = tMax; // start with the smallest possible value
   for (size_t i = 0; i < numEvents; i++) {
-    temp = this->events[i].pulseTime();
+    temp = as_underlying().events[i].pulseTime();
     if (temp > tMax)
       tMax = temp;
   }
@@ -193,19 +200,19 @@ DateAndTime getPulseTimeMin() const {
   DateAndTime tMin = DateAndTime::maximum();
 
   // no events is a soft error
-  if (this->empty())
+  if (as_underlying().empty())
     return tMin;
 
   // when events are ordered by pulse time just need the first value
-  if (this->order == PULSETIME_SORT) {
-    return this->events->begin()->pulseTime();
+  if (as_underlying().order == PULSETIME_SORT) {
+    return as_underlying().events->begin()->pulseTime();
   }
 
   // now we are stuck with a linear search
   DateAndTime temp = tMin; // start with the largest possible value
-  size_t numEvents = this->events.size()();
+  size_t numEvents = as_underlying().events.size()();
   for (size_t i = 0; i < numEvents; i++) {
-    temp = this->events[i].pulseTime();
+    temp = as_underlying().events[i].pulseTime();
     if (temp < tMin)
       tMin = temp;
   }
@@ -219,10 +226,10 @@ DateAndTime getPulseTimeMin() const {
 std::vector<Mantid::Types::Core::DateAndTime> getPulseTimes() const {
   std::vector<Mantid::Types::Core::DateAndTime> times;
   // Set the capacity of the vector to avoid multiple resizes
-  times.reserve(this->events.size());
+  times.reserve(as_underlying().events.size());
 
   // Convert the list
-  this->getPulseTimesHelper(*(this->events), times);
+  as_underlying().getPulseTimesHelper(*(as_underlying().events), times);
 
   return times;
 }
@@ -272,10 +279,10 @@ void filterByPulseTimeHelper(std::vector<T> &events, DateAndTime start, DateAndT
  */
 void filterInPlace(Kernel::TimeSplitterType &splitter) {
   // Start by sorting the event list by pulse time.
-  this->sortPulseTime();
+  as_underlying().sortPulseTime();
 
   // Iterate through all events (sorted by pulse time)
-  filterInPlaceHelper(splitter, this->events);
+  filterInPlaceHelper(splitter, as_underlying().events);
    
 }
 
@@ -286,7 +293,7 @@ void filterInPlace(Kernel::TimeSplitterType &splitter) {
  * @param splitter :: a TimeSplitterType where all the entries (start/end time)
  *indicate events
  *     that will be kept. Any other events will be deleted.
- * @param events :: either this->events or this->weightedevents.
+ * @param events :: either as_underlying().events or as_underlying().weightedevents.
  */
 void filterInPlaceHelper(Kernel::TimeSplitterType &splitter, typename std::vector<T> &events) {
   // Iterate through the splitter at the same time
@@ -364,13 +371,13 @@ void splitByTime(Kernel::TimeSplitterType &splitter, std::vector<EventListBase *
 
 
   // Start by sorting the event list by pulse time.
-  this->sortPulseTime();
+  as_underlying().sortPulseTime();
 
   // Initialize all the outputs
   size_t numOutputs = outputs.size();
   for (size_t i = 0; i < numOutputs; i++) {
     outputs[i]->clear();
-    outputs[i]->setDetectorIDs(this->getDetectorIDs());
+    outputs[i]->setDetectorIDs(as_underlying().getDetectorIDs());
     outputs[i]->setHistogram(m_histogram);
     // Match the output event type.
     outputs[i]->switchTo(eventType);
@@ -380,7 +387,7 @@ void splitByTime(Kernel::TimeSplitterType &splitter, std::vector<EventListBase *
   if (splitter.empty())
     return;
 
-  splitByTimeHelper(splitter, outputs, this->events);
+  splitByTimeHelper(splitter, outputs, as_underlying().events);
 
 }
 
@@ -394,7 +401,7 @@ void splitByTime(Kernel::TimeSplitterType &splitter, std::vector<EventListBase *
  * @param outputs :: a vector of where the split events will end up. The # of
  *entries in there should
  *        be big enough to accommodate the indices.
- * @param events :: either this->events or this->weightedevents.
+ * @param events :: either as_underlying().events or as_underlying().weightedevents.
  */
 void splitByTimeHelper(Kernel::TimeSplitterType &splitter, std::vector<EventListBase *> outputs,
                                   typename std::vector<T> &events) const {
@@ -450,14 +457,14 @@ void splitByTimeHelper(Kernel::TimeSplitterType &splitter, std::vector<EventList
  */
 void splitByPulseTime(Kernel::TimeSplitterType &splitter, std::map<int, EventListBase *> outputs) const {
   // Start by sorting the event list by pulse time.
-  this->sortPulseTimeTOF();
+  as_underlying().sortPulseTimeTOF();
 
   // Initialize all the output event lists
   std::map<int, EventListBase *>::iterator outiter;
   for (outiter = outputs.begin(); outiter != outputs.end(); ++outiter) {
     EventListBase *opeventlist = outiter->second;
     opeventlist->clear();
-    opeventlist->setDetectorIDs(this->getDetectorIDs());
+    opeventlist->setDetectorIDs(as_underlying().getDetectorIDs());
     opeventlist->setHistogram(m_histogram);
     // Match the output event type.
     opeventlist->switchTo(eventType);
@@ -468,7 +475,7 @@ void splitByPulseTime(Kernel::TimeSplitterType &splitter, std::map<int, EventLis
     // No splitter: copy all events to group workspace = -1
     (*outputs[-1]) = (*this);
   } else {
-    splitByPulseTimeHelper(splitter, outputs, this->events);    
+    splitByPulseTimeHelper(splitter, outputs, as_underlying().events);    
   }
 }
 
@@ -540,14 +547,14 @@ void splitByPulseTimeHelper(Kernel::TimeSplitterType &splitter, std::map<int, Ev
 void splitByPulseTimeWithMatrix(const std::vector<int64_t> &vec_times, const std::vector<int> &vec_target,
                                            std::map<int, EventListBase *> outputs) const {
   // Start by sorting the event list by pulse time.
-  this->sortPulseTimeTOF();
+  as_underlying().sortPulseTimeTOF();
 
   // Initialize all the output event lists
   std::map<int, EventListBase *>::iterator outiter;
   for (outiter = outputs.begin(); outiter != outputs.end(); ++outiter) {
     EventListBase *opeventlist = outiter->second;
     opeventlist->clear();
-    opeventlist->setDetectorIDs(this->getDetectorIDs());
+    opeventlist->setDetectorIDs(as_underlying().getDetectorIDs());
     opeventlist->setHistogram(m_histogram);
     // Match the output event type.
     opeventlist->switchTo(eventType);
@@ -559,7 +566,7 @@ void splitByPulseTimeWithMatrix(const std::vector<int64_t> &vec_times, const std
     (*outputs[-1]) = (*this);
   } else {
     // Split
-    splitByPulseTimeWithMatrixHelper(vec_times, vec_target, outputs, this->events);
+    splitByPulseTimeWithMatrixHelper(vec_times, vec_target, outputs, as_underlying().events);
   }
 }
 
@@ -618,11 +625,12 @@ void splitByPulseTimeWithMatrixHelper(const std::vector<int64_t> &vec_split_time
 }
 
     friend T;
-    // EventListPulsetimeFunctionsTemplate() = default;
+    friend SELF;
+    EventListPulsetimeFunctionsTemplate() = default;
 
-    inline T & as_underlying()
+    inline SELF & as_underlying()
     {
-        return static_cast<T&>(*this);
+        return static_cast<SELF&>(*this);
     }
 };
 }

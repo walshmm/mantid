@@ -6,8 +6,14 @@ using Types::Core::DateAndTime;
 using Types::Event::TofEvent;
 using namespace Mantid::API;
 
-EventListWeightedEventNoTime::EventListWeightedEventNoTime() : EventListWeightErrorTofFunctionsTemplate(std::make_shared<std::vector<WeightedEventNoTime>>()){
-    events = EventListWeightErrorTofFunctionsTemplate::events;
+
+EventListWeightedEventNoTime::EventListWeightedEventNoTime(){
+}
+
+/** Constructor, taking a vector of events.
+ * @param events :: Vector of WeightedEventNoTime's */
+EventListWeightedEventNoTime::EventListWeightedEventNoTime(const std::vector<WeightedEventNoTime> &events) {
+  this->events.assign(events.begin(), events.end());
 }
 
 /** Constructor copying from an existing event list

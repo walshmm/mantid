@@ -101,6 +101,9 @@ public:
   std::vector<WeightedEventNoTime> &getWeightedEventsNoTime();
   const std::vector<WeightedEventNoTime> &getWeightedEventsNoTime() const;
 
+  std::vector<TofEventNoTime> &getEventsNoTime();
+  const std::vector<TofEventNoTime> &getEventsNoTime() const;
+
   void clear(const bool removeDetIDs = true) override;
   void clearUnused();
 
@@ -276,6 +279,27 @@ protected:
   void checkWorksWithPoints() const override;
   void checkIsYAndEWritable() const override;
 private:
+
+    //Should be a shared pointer that gets passed down 
+    //to parents so they all point to the same list
+    // std::vector<T> events;
+
+
+    /// Histogram object holding the histogram data. Currently only X.
+    HistogramData::Histogram m_histogram;
+
+    /// What type of event is in our list.
+    Mantid::API::EventType eventType;
+
+    /// Last sorting order
+    mutable EventSortType order;
+
+    /// MRU lists of the parent EventWorkspace
+    mutable EventWorkspaceMRU *mru;
+
+    /// Mutex that is locked while sorting an event list
+    mutable std::mutex m_sortMutex;
+
   using ISpectrum::copyDataInto;
   void copyDataInto(EventListBase &sink) const;
   void copyDataInto(Histogram1D &sink) const;

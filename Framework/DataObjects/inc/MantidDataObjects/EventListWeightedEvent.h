@@ -17,6 +17,10 @@ class DLLExport EventListWeightedEvent :
 public EventListBase, 
 public EventListWeightErrorPulsetimeTofFunctionsTemplate<WeightedEvent, EventListWeightedEvent>,
 public EventListPermutationsMinusHelperFunctions<WeightedEvent> {
+
+    public:
+
+    EventListWeightedEvent(const std::vector<WeightedEvent> &events);
     EventListWeightedEvent();
     bool equals(const EventListBase &rhs, const double tolTof, const double tolWeight,
                        const int64_t tolPulse) const  ;
@@ -31,9 +35,9 @@ public EventListPermutationsMinusHelperFunctions<WeightedEvent> {
     void getWeightErrors(std::vector<double> &weightErrors) const  ;
     EventListWeightedEvent &operator-=(const EventListBase &more_events);
 
-    // private:
-    //  /// List of Events
-    // std::vector<WeightedEvent> events;
+    private:
+     /// List of Events
+    std::vector<WeightedEvent> events;
 };
 
 } // namespace DataObjects

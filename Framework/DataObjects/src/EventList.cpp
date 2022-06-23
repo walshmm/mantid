@@ -46,7 +46,7 @@ using namespace Mantid::API;
 /// Constructor (empty)
 // EventWorkspace is always histogram data and so is thus EventList
 EventList::EventList() {
-  this->eventList = std::make_shared<EventListTofEvent>();
+  this->eventList = std::make_unique<EventListTofEvent>();
 }
 
 /** Constructor with a MRU list
@@ -54,7 +54,7 @@ EventList::EventList() {
  * @param specNo :: the spectrum number for the event list
  */
 EventList::EventList(EventWorkspaceMRU *mru, specnum_t specNo) {
-  this->eventList = std::make_shared<EventListTofEvent>(mru, specNo);
+  this->eventList = std::make_unique<EventListTofEvent>(mru, specNo);
 }
 
 /** Constructor copying from an existing event list
@@ -68,25 +68,25 @@ EventList::EventList(const EventList &rhs) : IEventList(rhs){
 /** Constructor, taking a vector of events.
  * @param events :: Vector of TofEvent's */
 EventList::EventList(const std::vector<TofEvent> &events){
-  this->eventList = std::make_shared<EventListTofEvent>(events);
+  this->eventList = std::make_unique<EventListTofEvent>(events);
 }
 
 /** Constructor, taking a vector of events.
  * @param events :: Vector of WeightedEvent's */
 EventList::EventList(const std::vector<WeightedEvent> &events){
-  this->eventList = std::make_shared<EventListWeightedEvent>(events);
+  this->eventList = std::make_unique<EventListWeightedEvent>(events);
 }
 
 /** Constructor, taking a vector of events.
  * @param events :: Vector of WeightedEventNoTime's */
 EventList::EventList(const std::vector<WeightedEventNoTime> &events) {
-  this->eventList = std::make_shared<EventListWeightedEventNoTime>(events);
+  this->eventList = std::make_unique<EventListWeightedEventNoTime>(events);
 }
 
 /** Constructor, taking a vector of events.
  * @param events :: Vector of TofEventNoTime's */
 EventList::EventList(const std::vector<TofEventNoTime> &events) {
-  this->eventList = std::make_shared<EventListTofEventNoTime>(events);
+  this->eventList = std::make_unique<EventListTofEventNoTime>(events);
 }
 
 /// Destructor
@@ -102,7 +102,7 @@ EventList::~EventList() {
 }
 
 /// Copy data from another EventList, via ISpectrum reference.
-void EventList::copyDataFrom(const ISpectrum &source) { this->eventList->copyDataInto(&source); }
+void EventList::copyDataFrom(const ISpectrum &source) { this->eventList->copyDataInto(source); }
 
 // --------------------------------------------------------------------------
 /** Create an EventList from a histogram. This converts bins to weighted

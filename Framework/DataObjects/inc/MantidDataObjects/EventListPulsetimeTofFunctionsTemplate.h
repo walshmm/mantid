@@ -2,6 +2,9 @@
 
 #include "MantidDataObjects/EventListPulsetimeFunctionsTemplate.h"
 #include "MantidDataObjects/EventListTofFunctionsTemplate.h"
+#include "MantidKernel/DateAndTime.h"
+#include "MantidKernel/DateAndTimeHelpers.h"
+#include "MantidDataObjects/Events.h"
 
 // comparator for pulse time with tolerance
 struct comparePulseTimeTOFDelta {
@@ -29,22 +32,21 @@ struct comparePulseTimeTOFDelta {
 
 namespace Mantid {
 namespace DataObjects {
+
+using Types::Event::TofEvent;
+using namespace Mantid::API;
+
 template <typename T, typename SELF>
 class EventListPulsetimeTofFunctionsTemplate : public EventListPulsetimeFunctionsTemplate<T, SELF>, public EventListTofFunctionsTemplate<T, SELF>
 {
-  using EventListPulsetimeFunctionsTemplate
-  ::EventListBaseFunctionsTemplate
-  ::events;
-  using EventListPulsetimeFunctionsTemplate
-  ::EventListBaseFunctionsTemplate
-  ::m_histogram;
-  using EventListPulsetimeFunctionsTemplate
-  ::EventListBaseFunctionsTemplate
-  ::eventType;
-
-
 
 public:
+  // using BASE = typename EventListPulsetimeFunctionsTemplate<T, SELF>::BASE;
+  // using EventListPulsetimeTofFunctionsTemplateBASE = typename EventListPulsetimeTofFunctionsTemplate<T, SELF>::BASE;
+  // using EventListPulsetimeTofFunctionsTemplateBASE::events;
+  // using EventListPulsetimeTofFunctionsTemplateBASE::m_histogram;
+  // using EventListPulsetimeTofFunctionsTemplateBASE::eventType;
+
   EventListPulsetimeTofFunctionsTemplate(std::shared_ptr<std::vector<T>> events): 
   EventListPulsetimeFunctionsTemplate<T, SELF>(events), 
   EventListTofFunctionsTemplate<T, SELF>(events){}
@@ -58,11 +60,11 @@ void sort(const EventSortType order) const {
   if (order == UNSORTED) {
     return; // don't bother doing anything. Why did you ask to unsort?
   } else if (order == TOF_SORT) {
-    this->sortTof();
+    as_underlying().sortTof();
   } else if (order == PULSETIME_SORT) {
-    this->sortPulseTime();
+    as_underlying().sortPulseTime();
   } else if (order == PULSETIMETOF_SORT) {
-    this->sortPulseTimeTOF();
+    as_underlying().sortPulseTimeTOF();
   } else if (order == PULSETIMETOF_DELTA_SORT) {
     throw std::invalid_argument("sorting by pulse time with delta requires "
                                 "extra parameters. Use sortPulseTimeTOFDelta "
@@ -86,13 +88,13 @@ protected:
  */
 void sortPulseTimeTOFDelta(const Types::Core::DateAndTime &start, const double seconds) const {
   // Avoid sorting from multiple threads
-  std::lock_guard<std::mutex> _lock(this->m_sortMutex);
+  std::lock_guard<std::mutex> _lock(as_underlying().m_sortMutex);
 
   std::function<bool(const TofEvent &, const TofEvent &)> comparator = comparePulseTimeTOFDelta(start, seconds);
 
-  tbb::parallel_sort(this->events->begin(), this->events->end(), comparator);
+  tbb::parallel_sort(as_underlying().events->begin(), as_underlying().events->end(), comparator);
   
-  this->order = UNSORTED; // so the function always re-runs
+  as_underlying().order = UNSORTED; // so the function always re-runs
 }
 
 /*
@@ -100,19 +102,19 @@ void sortPulseTimeTOFDelta(const Types::Core::DateAndTime &start, const double s
  * (the absolute time)
  */
 void sortPulseTimeTOF() const {
-  if (this->order == PULSETIMETOF_SORT)
+  if (as_underlying().order == PULSETIMETOF_SORT)
     return; // already ordered
 
   // Avoid sorting from multiple threads
-  std::lock_guard<std::mutex> _lock(this->m_sortMutex);
+  std::lock_guard<std::mutex> _lock(as_underlying().m_sortMutex);
   // If the list was sorted while waiting for the lock, return.
-  if (this->order == PULSETIMETOF_SORT)
+  if (as_underlying().order == PULSETIMETOF_SORT)
     return;
 
-  tbb::parallel_sort(this->events->begin(), this->events->end(), compareEventPulseTimeTOF);
+  tbb::parallel_sort(as_underlying().events->begin(), as_underlying().events->end(), compareEventPulseTimeTOF);
 
   // Save
-  this->order = PULSETIMETOF_SORT;
+  as_underlying().order = PULSETIMETOF_SORT;
 }
 
 
@@ -149,17 +151,17 @@ void filterByPulseTime(DateAndTime start, DateAndTime stop, EventListBase &outpu
   }
 
   // Start by sorting the event list by pulse time.
-  this->sortPulseTime();
+  as_underlying().sortPulseTime();
   // Clear the output
   output.clear();
   // Has to match the given type
-  output.switchTo(this->eventType);
-  output.setDetectorIDs(this->getDetectorIDs());
-  output.setHistogram(this->m_histogram);
-  output.setSortOrder(this->order);
+  output.switchTo(as_underlying().eventType);
+  output.setDetectorIDs(as_underlying().getDetectorIDs());
+  output.setHistogram(as_underlying().m_histogram);
+  output.setSortOrder(as_underlying().order);
 
   // Iterate through all events (sorted by pulse time)
-  filterByPulseTimeHelper(*(this->events), start, stop, output.events);  
+  filterByPulseTimeHelper(*(as_underlying().events), start, stop, output.events);  
   
 }
 
@@ -170,16 +172,16 @@ void filterByTimeAtSample(Types::Core::DateAndTime start, Types::Core::DateAndTi
   }
 
   // Start by sorting
-  this->sortTimeAtSample(tofFactor, tofOffset);
+  as_underlying().sortTimeAtSample(tofFactor, tofOffset);
   // Clear the output
   output.clear();
   // Has to match the given type
-  output.switchTo(this->eventType);
-  output.setDetectorIDs(this->getDetectorIDs());
-  output.setHistogram(this->m_histogram);
-  output.setSortOrder(this->order);
+  output.switchTo(as_underlying().eventType);
+  output.setDetectorIDs(as_underlying().getDetectorIDs());
+  output.setHistogram(as_underlying().m_histogram);
+  output.setSortOrder(as_underlying().order);
 
-  filterByTimeAtSampleHelper(*(this->events), start, stop, tofFactor, tofOffset, output.events);
+  filterByTimeAtSampleHelper(*(as_underlying().events), start, stop, tofFactor, tofOffset, output.events);
   
 }
 
@@ -240,19 +242,19 @@ DateAndTime getTimeAtSampleMin(const double &tofFactor, const double &tofOffset)
   DateAndTime tMin = DateAndTime::maximum();
 
   // no events is a soft error
-  if (this->empty())
+  if (as_underlying().empty())
     return tMin;
 
   // when events are ordered by time at sample just need the first value
-  if (this->order == TIMEATSAMPLE_SORT) {
-    return calculateCorrectedFullTime(*(this->events->begin()), tofFactor, tofOffset);
+  if (as_underlying().order == TIMEATSAMPLE_SORT) {
+    return calculateCorrectedFullTime(*(as_underlying().events->begin()), tofFactor, tofOffset);
   }
 
   // now we are stuck with a linear search
-  size_t numEvents = this->events.size();
+  size_t numEvents = as_underlying().events.size();
   DateAndTime temp = tMin; // start with the smallest possible value
   for (size_t i = 0; i < numEvents; i++) {
-    temp = calculateCorrectedFullTime(this->events[i], tofFactor, tofOffset);
+    temp = calculateCorrectedFullTime(as_underlying().events[i], tofFactor, tofOffset);
      
     if (temp < tMin)
       tMin = temp;
@@ -266,19 +268,19 @@ DateAndTime getTimeAtSampleMax(const double &tofFactor, const double &tofOffset)
   DateAndTime tMax = DateAndTime::minimum();
 
   // no events is a soft error
-  if (this->empty())
+  if (as_underlying().empty())
     return tMax;
 
   // when events are ordered by time at sample just need the first value
-  if (this->order == TIMEATSAMPLE_SORT) {
-    return calculateCorrectedFullTime(*(this->events->rbegin()), tofFactor, tofOffset);
+  if (as_underlying().order == TIMEATSAMPLE_SORT) {
+    return calculateCorrectedFullTime(*(as_underlying().events->rbegin()), tofFactor, tofOffset);
   }
 
   // now we are stuck with a linear search
-  size_t numEvents = this->events.size();
+  size_t numEvents = as_underlying().events.size();
   DateAndTime temp = tMax; // start with the smallest possible value
   for (size_t i = 0; i < numEvents; i++) {
-    temp = calculateCorrectedFullTime(this->events[i], tofFactor, tofOffset);
+    temp = calculateCorrectedFullTime(as_underlying().events[i], tofFactor, tofOffset);
       
     if (temp > tMax)
       tMax = temp;
@@ -316,27 +318,27 @@ DateAndTime getTimeAtSampleMax(const double &tofFactor, const double &tofOffset)
 void splitByFullTime(Kernel::TimeSplitterType &splitter, std::map<int, EventListBase *> outputs,
                                 bool docorrection, double toffactor, double tofshift) const {
   // 1. Start by sorting the event list by pulse time.
-  this->sortPulseTimeTOF();
+  as_underlying().sortPulseTimeTOF();
 
   // 2. Initialize all the outputs
   std::map<int, EventListBase *>::iterator outiter;
   for (outiter = outputs.begin(); outiter != outputs.end(); ++outiter) {
     EventListBase *opeventlist = outiter->second;
     opeventlist->clear();
-    opeventlist->setDetectorIDs(this->getDetectorIDs());
-    opeventlist->setHistogram(this->m_histogram);
+    opeventlist->setDetectorIDs(as_underlying().getDetectorIDs());
+    opeventlist->setHistogram(as_underlying().m_histogram);
     // Match the output event type.
-    opeventlist->switchTo(this->eventType);
+    opeventlist->switchTo(as_underlying().eventType);
   }
 
   // Do nothing if there are no entries
   if (splitter.empty()) {
     // 3A. Copy all events to group workspace = -1
     (*outputs[-1]) = (*this);
-    // this->duplicate(outputs[-1]);
+    // as_underlying().duplicate(outputs[-1]);
   } else {
     // 3B. Split
-    splitByFullTimeHelper(splitter, outputs, this->events, docorrection, toffactor, tofshift);
+    splitByFullTimeHelper(splitter, outputs, as_underlying().events, docorrection, toffactor, tofshift);
     
   }
 }
@@ -352,7 +354,7 @@ void splitByFullTime(Kernel::TimeSplitterType &splitter, std::map<int, EventList
  * @param outputs :: a vector of where the split events will end up. The # of
  *entries in there should
  *        be big enough to accommodate the indices.
- * @param events :: either this->events or this->weightedevents.
+ * @param events :: either as_underlying().events or as_underlying().weightedevents.
  * @param docorrection :: flag to determine whether or not to apply correction
  * @param toffactor :: factor to correct TOF in formula toffactor*tof+tofshift
  * @param tofshift :: amount to shift (in SECOND) to correct TOF in formula:
@@ -451,10 +453,10 @@ std::string splitByFullTimeMatrixSplitter(const std::vector<int64_t> &vec_splitt
   for (outiter = vec_outputEventList.begin(); outiter != vec_outputEventList.end(); ++outiter) {
     EventListBase *opeventlist = outiter->second;
     opeventlist->clear();
-    opeventlist->setDetectorIDs(this->getDetectorIDs());
-    opeventlist->setHistogram(this->m_histogram);
+    opeventlist->setDetectorIDs(as_underlying().getDetectorIDs());
+    opeventlist->setHistogram(as_underlying().m_histogram);
     // Match the output event type.
-    opeventlist->switchTo(this->eventType);
+    opeventlist->switchTo(as_underlying().eventType);
   }
 
   std::string debugmessage;
@@ -463,19 +465,19 @@ std::string splitByFullTimeMatrixSplitter(const std::vector<int64_t> &vec_splitt
   if (vecgroups.empty()) {
     // Copy all events to group workspace = -1
     (*vec_outputEventList[-1]) = (*this);
-    // this->duplicate(outputs[-1]);
+    // as_underlying().duplicate(outputs[-1]);
   } else {
     // Split
 
     // Try to find out which filtering algorithm to use by comparing number of
     // splitters and number of events
-    bool sparse_splitter = vec_splitters_time.size() < this->getNumberEvents();
+    bool sparse_splitter = vec_splitters_time.size() < as_underlying().getNumberEvents();
     if (sparse_splitter)
       debugmessage = splitByFullTimeSparseVectorSplitterHelper(vec_splitters_time, vecgroups, vec_outputEventList,
-                                                                this->events, docorrection, toffactor, tofshift);
+                                                                as_underlying().events, docorrection, toffactor, tofshift);
     else
       debugmessage = splitByFullTimeVectorSplitterHelper(vec_splitters_time, vecgroups, vec_outputEventList,
-                                                          this->events, docorrection, toffactor, tofshift);
+                                                          as_underlying().events, docorrection, toffactor, tofshift);
       
   }
 
@@ -495,7 +497,7 @@ std::string splitByFullTimeMatrixSplitter(const std::vector<int64_t> &vec_splitt
  * @param outputs :: a vector of where the split events will end up. The # of
  *entries in there should
  *        be big enough to accommodate the indices.
- * @param vecEvents :: either this->events or this->weightedevents.
+ * @param vecEvents :: either as_underlying().events or as_underlying().weightedevents.
  * @param docorrection :: flag to determine whether or not to apply correction
  * @param toffactor :: factor multiplied to TOF for correcting event time from
  *detector to sample
@@ -561,7 +563,7 @@ std::string splitByFullTimeVectorSplitterHelper(const std::vector<int64_t> &vect
  * @param outputs :: a vector of where the split events will end up. The # of
  *entries in there should
  *        be big enough to accommodate the indices.
- * @param vecEvents :: either this->events or this->weightedevents.
+ * @param vecEvents :: either as_underlying().events or as_underlying().weightedevents.
  * @param docorrection :: flag to determine whether or not to apply correction
  * @param toffactor :: factor multiplied to TOF for correcting event time from
  *detector to sample
@@ -647,11 +649,12 @@ std::string splitByFullTimeSparseVectorSplitterHelper(const std::vector<int64_t>
 }
 
     friend T;
-    // EventListPulsetimeTofFunctionsTemplate() = default;
+    friend SELF;
+    EventListPulsetimeTofFunctionsTemplate() = default;
 
-    inline T & as_underlying()
+    inline SELF & as_underlying()
     {
-        return static_cast<T&>(*this);
+        return static_cast<SELF&>(*this);
     }
 };
 }

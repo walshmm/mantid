@@ -1,3 +1,4 @@
+#pragma once
 
 const double SEC_TO_NANO = 1.e9;
 

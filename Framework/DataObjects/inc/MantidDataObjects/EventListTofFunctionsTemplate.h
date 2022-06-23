@@ -1,6 +1,7 @@
 #pragma once
 
 #include "MantidDataObjects/EventListBaseFunctionsTemplate.h"
+#include "MantidKernel/Unit.h"
 
 namespace Mantid {
 namespace DataObjects {
@@ -8,6 +9,8 @@ template <typename T, typename SELF>
 class EventListTofFunctionsTemplate : public EventListBaseFunctionsTemplate<T, SELF>
 {
   public:
+
+  // using BASE = typename EventListTofFunctionsTemplate<T, SELF>::EventListBaseFunctionsTemplate<T, SELF>;
 
   EventListTofFunctionsTemplate(std::shared_ptr<std::vector<T>> events): 
   EventListBaseFunctionsTemplate<T, SELF>(events){}
@@ -17,13 +20,41 @@ class EventListTofFunctionsTemplate : public EventListBaseFunctionsTemplate<T, S
     if (order == UNSORTED) {
       return; // don't bother doing anything. Why did you ask to unsort?
     } else if (order == TOF_SORT) {
-      this->sortTof();
+      as_underlying().sortTof();
     }  else {
-      throw runtime_error("Invalid sort type in EventListTofFunctionsTemplate::sort(EventSortType)");
+      throw std::runtime_error("Invalid sort type in EventListTofFunctionsTemplate::sort(EventSortType)");
     }
   }
 
 protected:
+
+// --------------------------------------------------------------------------
+/** Utility function:
+ * Returns the iterator into events of the first TofEvent with
+ * tof() > seek_tof
+ * Will return events.end() if nothing is found!
+ *
+ * @param events :: event vector in which to look.
+ * @param seek_tof :: tof to find (typically the first bin X[0])
+ * @return iterator where the first event matching it is.
+ */
+typename std::vector<T>::const_iterator static findFirstEvent(const std::vector<T> &events, T seek_tof) {
+  return std::find_if_not(events.cbegin(), events.cend(), [seek_tof](const T &x) { return x < seek_tof; });
+}
+
+// --------------------------------------------------------------------------
+/** Utility function:
+ * Returns the iterator into events of the first TofEvent with
+ * tof() > seek_tof
+ * Will return events.end() if nothing is found!
+ *
+ * @param events :: event vector in which to look.
+ * @param seek_tof :: tof to find (typically the first bin X[0])
+ * @return iterator where the first event matching it is.
+ */
+typename std::vector<T>::iterator static findFirstEvent(std::vector<T> &events, T seek_tof) {
+  return std::find_if_not(events.begin(), events.end(), [seek_tof](const T &x) { return x < seek_tof; });
+}
 
 /**
  * @return The maximum tof value for the list of events->
@@ -33,19 +64,19 @@ double getTofMax() const {
   double tMax = std::numeric_limits<double>::lowest();
 
   // no events is a soft error
-  if (this->empty())
+  if (as_underlying().empty())
     return tMax;
 
   // when events are ordered by tof just need the first value
-  if (this->order == TOF_SORT) {
-    return this->events->rbegin()->tof();
+  if (as_underlying().order == TOF_SORT) {
+    return as_underlying().events->rbegin()->tof();
   }
 
   // now we are stuck with a linear search
-  size_t numEvents = this->events.size();
+  size_t numEvents = as_underlying().events.size();
   double temp = tMax; // start with the smallest possible value
   for (size_t i = 0; i < numEvents; i++) {
-    temp = this->events[i].tof();
+    temp = as_underlying().events[i].tof();
     if (temp > tMax)
       tMax = temp;
   }
@@ -61,19 +92,19 @@ double getTofMin() const {
   double tMin = std::numeric_limits<double>::max();
 
   // no events is a soft error
-  if (this->empty())
+  if (as_underlying().empty())
     return tMin;
 
   // when events are ordered by tof just need the first value
-  if (this->order == TOF_SORT) {
-    return this->events->begin()->tof();
+  if (as_underlying().order == TOF_SORT) {
+    return as_underlying().events->begin()->tof();
   }
 
   // now we are stuck with a linear search
   double temp = tMin; // start with the largest possible value
-  size_t numEvents = this->events.size();
+  size_t numEvents = as_underlying().events.size();
   for (size_t i = 0; i < numEvents; i++) {
-    temp = this->events[i].tof();
+    temp = as_underlying().events[i].tof();
     if (temp < tMin)
       tMin = temp;
   }
@@ -92,13 +123,13 @@ void convertTof(const double factor, const double offset) {
   x *= factor;
   x += offset;
 
-  if ((factor < 0.) && (this->getSortType() == TOF_SORT))
-    this->reverse();
+  if ((factor < 0.) && (as_underlying().getSortType() == TOF_SORT))
+    as_underlying().reverse();
 
-  if (this->getNumberEvents() <= 0)
+  if (as_underlying().getNumberEvents() <= 0)
     return;
   
-  this->convertTofHelper(*(this->events), factor, offset);
+  as_underlying().convertTofHelper(*(as_underlying().events), factor, offset);
 
 }
 
@@ -115,15 +146,15 @@ void convertTof(std::function<double(double)> func, const int sorting) {
 
   // do nothing if sorting > 0
   if (sorting == 0) {
-    this->setSortOrder(UNSORTED);
-  } else if ((sorting < 0) && (this->getSortType() == TOF_SORT)) {
-    this->reverse();
+    as_underlying().setSortOrder(UNSORTED);
+  } else if ((sorting < 0) && (as_underlying().getSortType() == TOF_SORT)) {
+    as_underlying().reverse();
   }
 
-  if (this->getNumberEvents() <= 0)
+  if (as_underlying().getNumberEvents() <= 0)
     return;
 
-  this->convertTofHelper(*(this->events), func);
+  as_underlying().convertTofHelper(*(as_underlying().events), func);
 
 }
 
@@ -162,23 +193,23 @@ void convertTof(std::function<double(double)> func, const int sorting) {
 void maskCondition(const std::vector<bool> &mask) {
 
   // mask size must match the number of events
-  if (this->getNumberEvents() != mask.size())
+  if (as_underlying().getNumberEvents() != mask.size())
     throw std::runtime_error("EventListBase::maskTof: tofMax must be > tofMin");
 
   // don't do anything with an emply list
-  if (this->getNumberEvents() == 0)
+  if (as_underlying().getNumberEvents() == 0)
     return;
 
   // Convert the list
   size_t numOrig = 0;
   size_t numDel = 0;
   
-  numOrig = this->events->size();
-  numDel = this->maskConditionHelper(*(this->events), mask);
+  numOrig = as_underlying().events->size();
+  numDel = as_underlying().maskConditionHelper(*(as_underlying().events), mask);
    
 
   if (numDel >= numOrig)
-    this->clear(false);
+    as_underlying().clear(false);
 }
 
 
@@ -193,22 +224,22 @@ void maskTof(const double tofMin, const double tofMax) {
     throw std::runtime_error("EventListBase::maskTof: tofMax must be > tofMin");
 
   // don't do anything with an emply list
-  if (this->getNumberEvents() == 0)
+  if (as_underlying().getNumberEvents() == 0)
     return;
 
   // Start by sorting by tof
-  this->sortTof();
+  as_underlying().sortTof();
 
   // Convert the list
   size_t numOrig = 0;
   size_t numDel = 0;
 
-  numOrig = this->events->size();
-  numDel = this->maskTofHelper(*(this->events), tofMin, tofMax);
+  numOrig = as_underlying().events->size();
+  numDel = as_underlying().maskTofHelper(*(as_underlying().events), tofMin, tofMax);
    
 
   if (numDel >= numOrig)
-    this->clear(false);
+    as_underlying().clear(false);
 }
 
 // --------------------------------------------------------------------------
@@ -256,7 +287,7 @@ std::size_t maskTofHelper(std::vector<T> &events, const double tofMin, const dou
  */
 std::vector<double> getTofs() const {
   std::vector<double> tofs;
-  this->getTofs(tofs);
+  as_underlying().getTofs(tofs);
   return tofs;
 }
 
@@ -265,8 +296,8 @@ std::vector<double> getTofs() const {
  */
 void getTofs(std::vector<double> &tofs) const {
   // Set the capacity of the vector to avoid multiple resizes
-  tofs.reserve(this->getNumberEvents());
-  this->getTofsHelper(*(this->events), tofs);
+  tofs.reserve(as_underlying().getNumberEvents());
+  as_underlying().getTofsHelper(*(as_underlying().events), tofs);
 }
 
 // --------------------------------------------------------------------------
@@ -288,10 +319,10 @@ void getTofs(std::vector<double> &tofs) const {
  * @param tofs :: The vector of doubles to set the tofs to.
  */
 void setTofs(const MantidVec &tofs) {
-  this->order = UNSORTED;
+  as_underlying().order = UNSORTED;
 
   // Convert the list
-  this->setTofsHelper(*(this->events), tofs);
+  as_underlying().setTofsHelper(*(as_underlying().events), tofs);
     
 }
 
@@ -331,7 +362,7 @@ void convertUnitsViaTof(Mantid::Kernel::Unit *fromUnit, Mantid::Kernel::Unit *to
     throw std::runtime_error("EventListBase::convertUnitsViaTof(): toUnit is not initialized!");
 
 
-  convertUnitsViaTofHelper(*(this->events), fromUnit, toUnit);
+  convertUnitsViaTofHelper(*(as_underlying().events), fromUnit, toUnit);
   
 }
 
@@ -362,7 +393,7 @@ void convertUnitsViaTofHelper(typename std::vector<T> &events, Mantid::Kernel::U
  *  @param power :: the Power b to apply to the conversion
  */
 void convertUnitsQuickly(const double &factor, const double &power) {
-  auto convertEvents = *(this->events);
+  auto convertEvents = *(as_underlying().events);
   convertUnitsQuicklyHelper(convertEvents, factor, power);  
 }
 
@@ -382,11 +413,12 @@ void convertUnitsQuicklyHelper(typename std::vector<T> &events, const double &fa
 }
 
     friend T;
-    // EventListTofFunctionsTemplate() = default;
+    friend SELF;
+    EventListTofFunctionsTemplate() = default;
 
-    inline T & as_underlying()
+    inline SELF & as_underlying()
     {
-        return static_cast<T&>(*this);
+        return static_cast<SELF&>(*this);
     }
 };
 }

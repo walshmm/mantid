@@ -6,6 +6,7 @@ using Types::Core::DateAndTime;
 using Types::Event::TofEvent;
 using namespace Mantid::API;
 
+
 EventListTofEventNoTime::EventListTofEventNoTime() : EventListWeightErrorPulsetimeTofFunctionsTemplate(std::make_shared<std::vector<TofEventNoTime>>()){
     events = EventListTofFunctionsTemplate::events;
 }
@@ -48,24 +49,24 @@ EventListTofEventNoTime::~EventListBase() {
 }
 
 
-bool EventListTofEventNoTime::equals(const EventListBase &rhs, const double tolTof, const double tolWeight,
+bool EventListTofEventNoTime::equals(const EventList &rhs, const double tolTof, const double tolWeight,
                        const int64_t tolPulse) const {
     if (this->getNumberEvents() != rhs.getNumberEvents())
         return false;
-    if (this->eventType != rhs.eventType)
+    if (this->eventType != rhs.getEventType())
         return false;
 
     // loop over the events
     size_t numEvents = this->getNumberEvents();
     for (size_t i = 0; i < numEvents; ++i) {
-    if (!((TofEventNoTime)this->events[i]).equals(rhs.events[i], tolTof))
+    if (!((TofEventNoTime)this->events[i]).equals(rhs.getEventsNoTime()[i], tolTof))
         return false;
     }                         
 }
 
 WeightedEvent EventListTofEventNoTime::getEvent(size_t event_number) {
-    return WeightedEvent(events[event_number].tof(), 0, events[event_number].weight(),
-                         events[event_number].errorSquared());
+    return WeightedEvent((*events)[event_number].tof(), 0, (*events)[event_number].weight(),
+                         (*events)[event_number].errorSquared());
 }
 
 void EventListTofEventNoTime::sortTimeAtSample(const double &tofFactor, const double &tofShift, bool forceResort) const {

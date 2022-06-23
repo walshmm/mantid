@@ -9,11 +9,15 @@ namespace DataObjects {
 template <typename T, typename SELF>
 class EventListWeightErrorFunctionsTemplate : public EventListWeightFunctionsTemplate<T, SELF>, public EventListErrorFunctionsTemplate<T, SELF>
 {
-    using EventListWeightFunctionsTemplate
-  ::EventListBaseFunctionsTemplate
-  ::events;
+  
 
   public:
+  // using BASE = typename EventListWeightFunctionsTemplate<T, SELF>::BASE;
+  // using EventListWeightErrorFunctionsTemplateBASE = typename EventListWeightErrorFunctionsTemplate<T, SELF>::BASE;
+  // using EventListWeightErrorFunctionsTemplateBASE::events;
+  // using EventListWeightErrorFunctionsTemplateBASE::m_histogram;
+  // using EventListWeightErrorFunctionsTemplateBASE::eventType;
+
     EventListWeightErrorFunctionsTemplate(std::shared_ptr<std::vector<T>> events): 
   EventListWeightFunctionsTemplate<T, SELF>(events), 
   EventListErrorFunctionsTemplate<T, SELF>(events){}
@@ -51,10 +55,10 @@ void integrate(const double minX, const double maxX, const bool entireRange, dou
   error = 0;
   if (!entireRange) {
     // The event list must be sorted by TOF!
-    this->sortTof();
+    as_underlying().sortTof();
   }
 
-  integrateHelper(*(this->events), minX, maxX, entireRange, sum, error);
+  integrateHelper(*(as_underlying().events), minX, maxX, entireRange, sum, error);
     
 }
 
@@ -135,7 +139,7 @@ void integrateHelper(std::vector<T> &events, const double minX, const double max
  * @return reference to this
  */
 EventListBase &operator*=(const double value) {
-  this->multiply(value);
+  as_underlying().multiply(value);
   return *this;
 }
 
@@ -151,7 +155,7 @@ EventListBase &operator*=(const double value) {
 EventListBase &operator/=(const double value) {
   if (value == 0.0)
     throw std::invalid_argument("EventListBase::divide() called with value of 0.0. Cannot divide by zero.");
-  this->multiply(1.0 / value, 0.0);
+  as_underlying().multiply(1.0 / value, 0.0);
   return *this;
 }
 
@@ -191,9 +195,9 @@ void multiply(const double value, const double error) {
     return;
 
   // TODO abstract out to wrapper?
-  this->switchTo(WEIGHTED);
+  as_underlying().switchTo(WEIGHTED);
 
-  multiplyHelper(*(this->events), value, error);
+  multiplyHelper(*(as_underlying().events), value, error);
 
 }
 
@@ -232,11 +236,12 @@ void multiplyHelper(std::vector<T> &events, const double value, const double err
 
 
     friend T;
-    // EventListWeightErrorFunctionsTemplate() = default;
+    friend SELF;
+    EventListWeightErrorFunctionsTemplate() = default;
 
-    inline T & as_underlying()
+    inline SELF & as_underlying()
     {
-        return static_cast<T&>(*this);
+        return static_cast<SELF&>(*this);
     }
 };
 }

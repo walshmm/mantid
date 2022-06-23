@@ -6,7 +6,14 @@ using Types::Core::DateAndTime;
 using Types::Event::TofEvent;
 using namespace Mantid::API;
 
-EventListTofEvent::EventListTofEvent() : EventListWeightErrorPulsetimeTofFunctionsTemplate(std::make_shared<std::vector<Types::Event::TofEvent>>()){
+
+EventListTofEvent::EventListTofEvent(){
+}
+
+/** Constructor, taking a vector of events.
+ * @param events :: Vector of TofEvent's */
+EventListTofEvent::EventListTofEvent(const std::vector<TofEvent> &events){
+  this->events->assign(events.begin(), events.end());
 }
 
 /// Constructor (empty)

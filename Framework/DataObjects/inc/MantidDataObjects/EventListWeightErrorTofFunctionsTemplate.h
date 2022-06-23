@@ -7,19 +7,18 @@
 namespace Mantid {
 namespace DataObjects {
 template <typename T, typename SELF>
-class EventListWeightErrorTofFunctionsTemplate : public EventListWeightErrorFunctionsTemplate<T, SELF>, public EventListTofFunctionsTemplate<T, SELF>
+class EventListWeightErrorTofFunctionsTemplate : public EventListWeightErrorFunctionsTemplate<T, SELF>, public  EventListTofFunctionsTemplate<T, SELF>
 {
-  using EventListWeightErrorFunctionsTemplate
-  ::EventListWeightFunctionsTemplate
-  ::EventListBaseFunctionsTemplate
-  ::events;
+  using ThisClass = EventListWeightErrorTofFunctionsTemplate<T, SELF>;
 
   public:
 
-  EventListWeightErrorTofFunctionsTemplate(std::shared_ptr<std::vector<T>> events): 
-  EventListWeightErrorFunctionsTemplate<T, SELF>(events), 
-  EventListTofFunctionsTemplate<T, SELF>(events) 
-  {}
+  // using EventListWeightErrorFunctionsTemplateBASE = typename EventListWeightErrorFunctionsTemplate<T, SELF>::EventListWeightErrorFunctionsTemplateBASE;
+  // using EventListWeightErrorTofFunctionsTemplateBASE = typename EventListWeightErrorTofFunctionsTemplate<T, SELF>::EventListWeightErrorFunctionsTemplateBASE;
+  // using EventListWeightErrorTofFunctionsTemplateBASE::events;
+  // using EventListWeightErrorTofFunctionsTemplateBASE::m_histogram;
+  // using EventListWeightErrorTofFunctionsTemplateBASE::eventType;
+
 
 protected:
 
@@ -38,7 +37,7 @@ protected:
 void createFromHistogram(const ISpectrum *inSpec, bool GenerateZeros, bool GenerateMultipleEvents,
                                     int MaxEventsPerBin) {
   // Fresh start
-  this->clear(true);
+  as_underlying().clear(true);
   // Get the input histogram
   const MantidVec &X = inSpec->readX();
   const MantidVec &Y = inSpec->readY();
@@ -47,11 +46,11 @@ void createFromHistogram(const ISpectrum *inSpec, bool GenerateZeros, bool Gener
     throw std::runtime_error("Expected a histogram (X vector should be 1 longer than the Y vector)");
 
   // Copy detector IDs and spectra
-  this->copyInfoFrom(*inSpec);
+  as_underlying().copyInfoFrom(*inSpec);
   // We need weights but have no way to set the time. So use weighted, no time
-  this->switchTo(WEIGHTED_NOTIME);
+  as_underlying().switchTo(WEIGHTED_NOTIME);
   if (GenerateZeros)
-    this->events->reserve(Y.size());
+    as_underlying().events->reserve(Y.size());
 
   for (size_t i = 0; i < X.size() - 1; i++) {
     double weight = Y[i];
@@ -82,7 +81,7 @@ void createFromHistogram(const ISpectrum *inSpec, bool GenerateZeros, bool Gener
             double tof = X[i] + tofStep * (0.5 + double(j));
             // Create and add the event
             // TODO: try emplace_back() here.
-            events->emplace_back(tof, weight, errorSquared);
+            as_underlying().events->emplace_back(tof, weight, errorSquared);
           }
         } else {
           // --------- Single event per bin ----------
@@ -92,18 +91,18 @@ void createFromHistogram(const ISpectrum *inSpec, bool GenerateZeros, bool Gener
           double errorSquared = E[i];
           errorSquared *= errorSquared;
           // Create and add the event
-          events->emplace_back(tof, weight, errorSquared);
+          as_underlying().events->emplace_back(tof, weight, errorSquared);
         }
       } // error is nont NAN or infinite
     }   // weight is non-zero, not NAN, and non-infinite
   }     // (each bin)
 
   // Set the X binning parameters
-  this->setX(inSpec->ptrX());
+  as_underlying().setX(inSpec->ptrX());
 
   // Manually set that this is sorted by TOF, since it is. This will make it
   // "threadSafe" in other algos.
-  this->setSortOrder(TOF_SORT);
+  as_underlying().setSortOrder(TOF_SORT);
 }
 
 inline double calcNorm(const double errorSquared) {
@@ -124,7 +123,6 @@ inline double calcNorm(const double errorSquared) {
  *the same.
  */
 
-template <class T>
 inline void compressEventsHelper(const std::vector<T> &events, std::vector<WeightedEventNoTime> &out,
                                             double tolerance) {
   // Clear the output. We can't know ahead of time how much space to reserve :(
@@ -189,6 +187,47 @@ inline void compressEventsHelper(const std::vector<T> &events, std::vector<Weigh
   }
 }
 
+  // --------------------------------------------------------------------------
+/** Compress the event list by grouping events with the same
+ * TOF (within a given tolerance). PulseTime is ignored.
+ * The event list will be switched to WeightedEventNoTime.
+ *
+ * @param tolerance :: how close do two event's TOF have to be to be considered
+ *the same.
+ * @param destination :: EventListBase that will receive the compressed events-> Can
+ *be == this.
+ */
+
+//NOTE: Dont like that this is operating with a parent type as a parameter
+void compressEvents(double tolerance, EventList *destination) {
+  if (!as_underlying().empty()) {
+    as_underlying().sortTof();
+
+    //in the wrapper do this before calling compress Events
+    // destination->clear()
+    // destination->switchTo(WEIGHTED_NOTIME)
+
+
+    //should work because the wrapper's equal operator refers to the wrapped EventList for equality
+    if (destination == this) {
+            // Put results in a temp output
+            std::vector<WeightedEventNoTime> out;
+            compressEventsHelper(*(as_underlying().events), out, tolerance);
+            // Put it back
+            as_underlying().events->swap(out);
+        } else {
+            compressEventsHelper(*(as_underlying().events), ((ThisClass*)destination)->events, tolerance);
+    }
+    
+  }
+  // In all cases, you end up WEIGHTED_NOTIME.
+  ((ThisClass*)destination)->eventType = WEIGHTED_NOTIME;
+  // The sort is still valid!
+  ((ThisClass*)destination)->order = TOF_SORT;
+  // Empty out storage for vectors that are now unused.
+  ((ThisClass*)destination)->clearUnused();
+}
+
 // --------------------------------------------------------------------------
 /** Compress the event list by grouping events with the same TOF.
  * Performs the compression in parallel.
@@ -199,7 +238,6 @@ inline void compressEventsHelper(const std::vector<T> &events, std::vector<Weigh
  *the same.
  */
 
-template <class T>
 void compressEventsParallelHelper(const std::vector<T> &events, std::vector<WeightedEventNoTime> &out,
                                              double tolerance) {
   // Create a local output vector for each thread
@@ -305,11 +343,11 @@ void multiply(const MantidVec &X, const MantidVec &Y, const MantidVec &E) {
 
     // Switch to weights if needed.
     // TODO abstract out to wrapper?
-    this->switchTo(WEIGHTED);
+    as_underlying().switchTo(WEIGHTED);
     // Fall through
 
-    this->sortTof();
-    multiplyHistogramHelper(*(this->events), X, Y, E);
+    as_underlying().sortTof();
+    multiplyHistogramHelper(*(as_underlying().events), X, Y, E);
 
 }
 
@@ -417,7 +455,7 @@ void divide(const double value, const double error) {
   // Relative error remains the same
   double invError = (error / value) * invValue;
 
-  this->multiply(invValue, invError);
+  as_underlying().multiply(invValue, invError);
 }
 
 
@@ -446,11 +484,11 @@ void divide(const double value, const double error) {
 void divide(const MantidVec &X, const MantidVec &Y, const MantidVec &E) {
     // Switch to weights if needed.
     // TODO abstract out to wrapper?
-    this->switchTo(WEIGHTED);
+    as_underlying().switchTo(WEIGHTED);
     // Fall through
 
-  this->sortTof();
-  divideHistogramHelper(*(this->events), X, Y, E);
+  as_underlying().sortTof();
+  divideHistogramHelper(*(as_underlying().events), X, Y, E);
     
 }
 
@@ -549,11 +587,12 @@ void divideHistogramHelper(std::vector<T> &events, const MantidVec &X, const Man
 
 
     friend T;
-    // EventListWeightErrorTofFunctionsTemplate() = default;
+    friend SELF;
+    EventListWeightErrorTofFunctionsTemplate() = default;
 
-    inline T & as_underlying()
+    inline SELF & as_underlying()
     {
-        return static_cast<T&>(*this);
+        return static_cast<SELF&>(*this);
     }
 };
 }

@@ -13,13 +13,9 @@ namespace Mantid {
 namespace DataObjects {
 // Share the same definition of wrapper/interface
 class DLLExport EventListTofEvent : public EventListBase, public EventListWeightErrorPulsetimeTofFunctionsTemplate<Types::Event::TofEvent, EventListTofEvent> {
-    using  EventListWeightErrorPulsetimeTofFunctionsTemplate
-    ::EventListWeightErrorTofFunctionsTemplate
-    ::EventListWeightErrorFunctionsTemplate
-    ::EventListWeightFunctionsTemplate
-    ::EventListBaseFunctionsTemplate
-    ::events;
-    
+
+    public:
+    EventListTofEvent(const std::vector<TofEvent> &events);
     EventListTofEvent();
     bool equals(const EventListBase &rhs, const double tolTof, const double tolWeight,
                        const int64_t tolPulse) const  ;
@@ -38,7 +34,7 @@ class DLLExport EventListTofEvent : public EventListBase, public EventListWeight
     void generateCountsHistogram(const MantidVec &X, MantidVec &Y) const;
     private:
     /// List of Events
-    // std::vector<Types::Event::TofEvent> events;
+    std::vector<Types::Event::TofEvent> events;
     // Declared in EventListBaseFunctionsTemplate
 };
 

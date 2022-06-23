@@ -17,6 +17,16 @@ class DLLExport EventListTofEventNoTime :
 public EventListBase, 
 public EventListTofFunctionsTemplate<TofEventNoTime, EventListTofEventNoTime>,
 public EventListPermutationsMinusHelperFunctions<TofEventNoTime> {
+// using iHateTypeDefs = EventListTofFunctionsTemplate<TofEventNoTime, EventListTofEventNoTime>::EventListBaseFunctionsTemplate<TofEventNoTime, EventListTofEventNoTime>;
+
+// using  EventListTofFunctionsTemplate<TofEventNoTime, EventListTofEventNoTime>::EventListBaseFunctionsTemplate<TofEventNoTime, EventListTofEventNoTime>::events;
+
+
+//     // using iHateTypeDefs::events;
+//     using  iHateTypeDefs::getNumberEvents;
+//     using  iHateTypeDefs::eventType;
+    public:
+
     EventListTofEventNoTime();
     EventListTofEventNoTime(const std::vector<TofEventNoTime> &events);
     bool equals(const EventListBase &rhs, const double tolTof, const double tolWeight,
@@ -45,10 +55,13 @@ public EventListPermutationsMinusHelperFunctions<TofEventNoTime> {
                                            std::map<int, EventListBase *> outputs) const  ;
     EventListTofEventNoTime &operator-=(const EventListBase &more_events);
     void sortPulseTimeTOFDelta(const Types::Core::DateAndTime &start, const double seconds) const;
+    void sortPulseTime() const ;
+    void sortPulseTimeTOF() const ;
 
-    // private:
-    //  /// List of Events
-    // std::vector<TofEventNoTime> events;
+
+    private:
+     /// List of Events
+    std::vector<TofEventNoTime> events;
 };
 
 } // namespace DataObjects

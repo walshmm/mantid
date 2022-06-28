@@ -7,35 +7,25 @@ using Types::Event::TofEvent;
 using namespace Mantid::API;
 
 
-EventListTofEventNoTime::EventListTofEventNoTime() : EventListWeightErrorPulsetimeTofFunctionsTemplate(std::make_shared<std::vector<TofEventNoTime>>()){
-    events = EventListTofFunctionsTemplate::events;
+EventListTofEventNoTime::EventListTofEventNoTime() {
 }
 
 /** Constructor, taking a vector of events.
  * @param events :: Vector of TofEventNoTime's */
-EventListTofEventNoTime::EventListTofEventNoTime(const std::vector<TofEventNoTime> &events) : EventListTofEventNoTime() {
-     this->events->assign(events.begin(), events.end());
+EventListTofEventNoTime::EventListTofEventNoTime(const std::vector<TofEventNoTime> &events) : EventListBase() {
+     this->events.assign(events.begin(), events.end());
 }
 
 /** Constructor copying from an existing event list
  * @param rhs :: EventListBase object to copy*/
-EventListTofEventNoTime::EventListBase(const EventListBase &rhs) :EventListTofEventNoTime(), IEventList(rhs), m_histogram(rhs.m_histogram), mru{nullptr} {
+EventListTofEventNoTime::EventListTofEventNoTime(const EventList &rhs) :EventListBase() {
   // Note that operator= also assigns m_histogram, but the above use of the copy
   // constructor avoid a memory allocation and is thus faster.
   this->operator=(rhs);
 }
 
-/** Constructor, taking a vector of events->
- * @param events :: Vector of TofEventNoTime's */
-EventListTofEventNoTime::EventListBase(const std::vector<TofEventNoTime> &events)
-    :EventListTofEventNoTime(), m_histogram(HistogramData::Histogram::XMode::BinEdges, HistogramData::Histogram::YMode::Counts), mru(nullptr) {
-  this->events->assign(events.begin(), events.end());
-  this->eventType = UNWEIGHTED;
-  this->order = UNSORTED;
-}
-
 /// Destructor
-EventListTofEventNoTime::~EventListBase() {
+EventListTofEventNoTime::~EventListTofEventNoTime() {
   // Note: These two lines do not seem to have an effect on releasing memory
   //  at least on Linux. (Memory usage seems to increase event after deleting
   //  EventWorkspaces.
@@ -51,13 +41,13 @@ EventListTofEventNoTime::~EventListBase() {
 
 bool EventListTofEventNoTime::equals(const EventList &rhs, const double tolTof, const double tolWeight,
                        const int64_t tolPulse) const {
-    if (this->getNumberEvents() != rhs.getNumberEvents())
+    if (this->events.size() != rhs.getNumberEvents())
         return false;
     if (this->eventType != rhs.getEventType())
         return false;
 
     // loop over the events
-    size_t numEvents = this->getNumberEvents();
+    size_t numEvents = this->events.size();
     for (size_t i = 0; i < numEvents; ++i) {
     if (!((TofEventNoTime)this->events[i]).equals(rhs.getEventsNoTime()[i], tolTof))
         return false;
@@ -65,27 +55,13 @@ bool EventListTofEventNoTime::equals(const EventList &rhs, const double tolTof, 
 }
 
 WeightedEvent EventListTofEventNoTime::getEvent(size_t event_number) {
-    return WeightedEvent((*events)[event_number].tof(), 0, (*events)[event_number].weight(),
-                         (*events)[event_number].errorSquared());
+    throw std::runtime_error("EventList: Unimplemented function");
+    // return WeightedEvent(events[event_number].tof(), 0, events[event_number].weight(),
+    //                      events[event_number].errorSquared());
 }
 
 void EventListTofEventNoTime::sortTimeAtSample(const double &tofFactor, const double &tofShift, bool forceResort) const {
-    // Check pre-cached sort flag.
-    if (this->order == TIMEATSAMPLE_SORT && !forceResort)
-        return;
-
-    // Avoid sorting from multiple threads
-    std::lock_guard<std::mutex> _lock(m_sortMutex);
-    // If the list was sorted while waiting for the lock, return.
-    if (this->order == TIMEATSAMPLE_SORT && !forceResort)
-        return;
-
-    // Perform sort.
-
-    CompareTimeAtSample<WeightedEventNoTime> comparitor(tofFactor, tofShift);
-    tbb::parallel_sort(events->begin(), events->end(), comparitor);
-    // Save the order to avoid unnecessary re-sorting.
-    this->order = TIMEATSAMPLE_SORT;    
+    throw std::invalid_argument("Cannot sort events that do not have pulsetime");   
 }
 
 void EventListTofEventNoTime::sortPulseTime() const {
@@ -96,16 +72,16 @@ void EventListTofEventNoTime::sortPulseTimeTOF() const {
     // do nothing, no time to sort;
 }
 
-void EventListTofEventNoTime::sortPulseTimeTOFDelta(const Types::Core::DateAndTime &start, const double seconds) const override {
+void EventListTofEventNoTime::sortPulseTimeTOFDelta(const Types::Core::DateAndTime &start, const double seconds) const {
     // do nothing, no time to sort;
 }
 
 size_t EventListTofEventNoTime::getMemorySize() const {
-    return this->events->capacity() * sizeof(WeightedEventNoTime) + sizeof(EventListTofEventNoTime);
+    return this->events.capacity() * sizeof(WeightedEventNoTime) + sizeof(EventListTofEventNoTime);
 }
 
 void EventListTofEventNoTime::compressFatEvents(const double tolerance, const Mantid::Types::Core::DateAndTime &timeStart,
-                                  const double seconds, EventListBase *destination) {
+                                  const double seconds, EventList *destination) {
     throw std::invalid_argument("Cannot compress events that do not have pulsetime");
 }
 
@@ -118,14 +94,14 @@ void EventListTofEventNoTime::generateHistogramPulseTime(const MantidVec &X, Man
     throw std::runtime_error("TODO: Determine if I can histogram with only pulse time.");
 }
 
-void EventListTofEventNoTime::filterByPulseTime(DateAndTime start, DateAndTime stop, EventList &output) const {
+void EventListTofEventNoTime::filterByPulseTime(Types::Core::DateAndTime start, Types::Core::DateAndTime stop, EventList &output) const {
     throw std::runtime_error("EventListTofEventNoTime::filterByTimeAtSample() called on an "
                              "EventListBase that no longer has full time "
                              "information.");
 }
 
 void EventListTofEventNoTime::filterByTimeAtSample(Types::Core::DateAndTime start, Types::Core::DateAndTime stop, double tofFactor,
-                                     double tofOffset, EventListBase &output) const {
+                                     double tofOffset, EventList &output) const {
     throw std::runtime_error("EventListTofEventNoTime::filterByTimeAtSample() called on an "
                              "EventListBase that no longer has full time "
                              "information.");
@@ -136,12 +112,12 @@ void EventListTofEventNoTime::filterInPlace(Kernel::TimeSplitterType &splitter) 
                              "EventListBase that no longer has time information.");
 }
 
-void EventListTofEventNoTime::splitByTime(Kernel::TimeSplitterType &splitter, std::vector<EventListBase *> outputs) const {
+void EventListTofEventNoTime::splitByTime(Kernel::TimeSplitterType &splitter, std::vector<EventList *> outputs) const {
     throw std::runtime_error("EventListTofEventNoTime::splitByTime() called on an EventListBase "
                              "that no longer has time information.");
 }
 
-void EventListTofEventNoTime::splitByFullTime(Kernel::TimeSplitterType &splitter, std::map<int, EventListBase *> outputs,
+void EventListTofEventNoTime::splitByFullTime(Kernel::TimeSplitterType &splitter, std::map<int, EventList *> outputs,
                                 bool docorrection, double toffactor, double tofshift) const {
     throw std::runtime_error("EventListTofEventNoTime::splitByTime() called on an EventListBase "
                              "that no longer has time information.");
@@ -149,19 +125,19 @@ void EventListTofEventNoTime::splitByFullTime(Kernel::TimeSplitterType &splitter
 
 std::string EventListTofEventNoTime::splitByFullTimeMatrixSplitter(const std::vector<int64_t> &vec_splitters_time,
                                                      const std::vector<int> &vecgroups,
-                                                     std::map<int, EventListBase *> vec_outputEventList, bool docorrection,
+                                                     std::map<int, EventList *> vec_outputEventList, bool docorrection,
                                                      double toffactor, double tofshift) const {
     throw std::runtime_error("EventListTofEventNoTime::splitByTime() called on an EventListBase "
                              "that no longer has time information.");                                                     
 }
 
-void EventListTofEventNoTime::splitByPulseTime(Kernel::TimeSplitterType &splitter, std::map<int, EventListBase *> outputs) const {
+void EventListTofEventNoTime::splitByPulseTime(Kernel::TimeSplitterType &splitter, std::map<int, EventList *> outputs) const {
     throw std::runtime_error("EventListTofEventNoTime::splitByTime() called on an EventListBase "
                              "that no longer has time information.");
 }
 
 void EventListTofEventNoTime::splitByPulseTimeWithMatrix(const std::vector<int64_t> &vec_times, const std::vector<int> &vec_target,
-                                           std::map<int, EventListBase *> outputs) const {
+                                           std::map<int, EventList *> outputs) const {
     throw std::runtime_error("EventListTofEventNoTime::splitByTime() called on an EventListBase "
                              "that no longer has time information.");
 }

@@ -14,54 +14,53 @@ namespace Mantid {
 namespace DataObjects {
 // Share the same definition of wrapper/interface
 class DLLExport EventListTofEventNoTime : 
-public EventListBase, 
+public EventListBase,
+// extract this out to another class?
 public EventListTofFunctionsTemplate<TofEventNoTime, EventListTofEventNoTime>,
+public EventListBaseFunctionsTemplate<TofEventNoTime, EventListTofEventNoTime>,
+// END: extract this out to another class?
 public EventListPermutationsMinusHelperFunctions<TofEventNoTime> {
-// using iHateTypeDefs = EventListTofFunctionsTemplate<TofEventNoTime, EventListTofEventNoTime>::EventListBaseFunctionsTemplate<TofEventNoTime, EventListTofEventNoTime>;
-
-// using  EventListTofFunctionsTemplate<TofEventNoTime, EventListTofEventNoTime>::EventListBaseFunctionsTemplate<TofEventNoTime, EventListTofEventNoTime>::events;
-
-
-//     // using iHateTypeDefs::events;
-//     using  iHateTypeDefs::getNumberEvents;
-//     using  iHateTypeDefs::eventType;
+    friend class EventListBaseFunctionsTemplate<TofEventNoTime, EventListTofEventNoTime>;
     public:
+    using EventListBaseFunctionsTemplate<TofEventNoTime, EventListTofEventNoTime>::clear;
 
     EventListTofEventNoTime();
     EventListTofEventNoTime(const std::vector<TofEventNoTime> &events);
-    bool equals(const EventListBase &rhs, const double tolTof, const double tolWeight,
+    EventListTofEventNoTime(const EventList &rhs);
+    ~EventListTofEventNoTime();
+    bool equals(const EventList &rhs, const double tolTof, const double tolWeight,
                        const int64_t tolPulse) const  ;
     WeightedEvent getEvent(size_t event_number)  ;
     void sortTimeAtSample(const double &tofFactor, const double &tofShift, bool forceResort) const  ;
     size_t getMemorySize() const  ;
     void compressFatEvents(const double tolerance, const Mantid::Types::Core::DateAndTime &timeStart,
-                                  const double seconds, EventListBase *destination)  ;
+                                  const double seconds, EventList *destination)  ;
     void generateHistogramTimeAtSample(const MantidVec &X, MantidVec &Y, MantidVec &E, const double &tofFactor,
                                               const double &tofOffset, bool skipError)  ;
     void generateHistogramPulseTime(const MantidVec &X, MantidVec &Y, MantidVec &E, bool skipError) const  ;
-    void filterByPulseTime(DateAndTime start, DateAndTime stop, EventListBase &output) const  ;
+    void filterByPulseTime(Types::Core::DateAndTime start, Types::Core::DateAndTime stop, EventList &output) const;
     void filterByTimeAtSample(Types::Core::DateAndTime start, Types::Core::DateAndTime stop, double tofFactor,
-                                     double tofOffset, EventListBase &output) const  ;
+                                     double tofOffset, EventList &output) const  ;
     void filterInPlace(Kernel::TimeSplitterType &splitter)  ;
-    void splitByTime(Kernel::TimeSplitterType &splitter, std::vector<EventListBase *> outputs) const  ;
-    void splitByFullTime(Kernel::TimeSplitterType &splitter, std::map<int, EventListBase *> outputs,
+    void splitByTime(Kernel::TimeSplitterType &splitter, std::vector<EventList *> outputs) const  ;
+    void splitByFullTime(Kernel::TimeSplitterType &splitter, std::map<int, EventList *> outputs,
                                 bool docorrection, double toffactor, double tofshift) const  ;
     std::string splitByFullTimeMatrixSplitter(const std::vector<int64_t> &vec_splitters_time,
                                                      const std::vector<int> &vecgroups,
-                                                     std::map<int, EventListBase *> vec_outputEventList, bool docorrection,
+                                                     std::map<int, EventList *> vec_outputEventList, bool docorrection,
                                                      double toffactor, double tofshift) const  ;
-    void splitByPulseTime(Kernel::TimeSplitterType &splitter, std::map<int, EventListBase *> outputs) const  ;
+    void splitByPulseTime(Kernel::TimeSplitterType &splitter, std::map<int, EventList *> outputs) const  ;
     void splitByPulseTimeWithMatrix(const std::vector<int64_t> &vec_times, const std::vector<int> &vec_target,
-                                           std::map<int, EventListBase *> outputs) const  ;
-    EventListTofEventNoTime &operator-=(const EventListBase &more_events);
+                                           std::map<int, EventList *> outputs) const  ;
+    EventListTofEventNoTime &operator-=(const EventList &more_events);
     void sortPulseTimeTOFDelta(const Types::Core::DateAndTime &start, const double seconds) const;
     void sortPulseTime() const ;
     void sortPulseTimeTOF() const ;
 
 
-    private:
+    protected:
      /// List of Events
-    std::vector<TofEventNoTime> events;
+    mutable std::vector<TofEventNoTime> events;
 };
 
 } // namespace DataObjects

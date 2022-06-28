@@ -9,15 +9,10 @@ using namespace Mantid::API;
 EventListWeightedEvent::EventListWeightedEvent() {
 }
 
-/** Constructor, taking a vector of events.
- * @param events :: Vector of WeightedEvent's */
-EventListWeightedEvent::EventListWeightedEvent(const std::vector<WeightedEvent> &events){
-  this->events->assign(events.begin(), events.end());
-}
 
 /** Constructor copying from an existing event list
  * @param rhs :: EventListBase object to copy*/
-EventListWeightedEvent::EventListBase(const EventListBase &rhs) :EventListWeightedEvent(), IEventList(rhs), m_histogram(rhs.m_histogram), mru{nullptr} {
+EventListWeightedEvent::EventListWeightedEvent(const EventList &rhs) : EventListBase(rhs) {
   // Note that operator= also assigns m_histogram, but the above use of the copy
   // constructor avoid a memory allocation and is thus faster.
   this->operator=(rhs);
@@ -25,15 +20,15 @@ EventListWeightedEvent::EventListBase(const EventListBase &rhs) :EventListWeight
 
 /** Constructor, taking a vector of events->
  * @param events :: Vector of WeightedEvent's */
-EventListWeightedEvent::EventListBase(const std::vector<WeightedEvent> &events)
-    :EventListWeightedEvent(), m_histogram(HistogramData::Histogram::XMode::BinEdges, HistogramData::Histogram::YMode::Counts), mru(nullptr) {
-  this->events->assign(events.begin(), events.end());
+EventListWeightedEvent::EventListWeightedEvent(const std::vector<WeightedEvent> &events)
+    :EventListBase(events){
+  this->events.assign(events.begin(), events.end());
   this->eventType = WEIGHTED;
   this->order = UNSORTED;
 }
 
 /// Destructor
-EventListWeightedEvent::~EventListBase() {
+EventListWeightedEvent::~EventListWeightedEvent() {
   // Note: These two lines do not seem to have an effect on releasing memory
   //  at least on Linux. (Memory usage seems to increase event after deleting
   //  EventWorkspaces.
@@ -47,17 +42,21 @@ EventListWeightedEvent::~EventListBase() {
 }
 
 
-bool EventListWeightedEvent::equals(const EventListBase &rhs, const double tolTof, const double tolWeight,
+bool EventListWeightedEvent::equals(const EventList &rhs, const double tolTof, const double tolWeight,
                        const int64_t tolPulse) const {
-    if (this->getNumberEvents() != rhs.getNumberEvents())
-        return false;
+    auto baseRhs = std::static_cast<EventListBase>(rhs);
     if (this->eventType != rhs.eventType)
+        return false;
+        
+    auto rhsWeightedEvent = std::static_cast<EventListWeightedEvent>(rhs);
+    if (this->getNumberEvents() != rhsWeightedEvent.getNumberEvents())
         return false;
 
     // loop over the events
     size_t numEvents = this->getNumberEvents();
+    
     for (size_t i = 0; i < numEvents; ++i) {
-    if (!((WeightedEvent)this->events[i]).equals(rhs.events[i], tolTof, tolWeight, tolPulse))
+    if (!(this->events[i]).equals(rhsWeightedEvent.events[i], tolTof, tolWeight, tolPulse))
         return false;
     }                         
 }
@@ -74,19 +73,19 @@ void EventListWeightedEvent::sortTimeAtSample(const double &tofFactor, const dou
     // Avoid sorting from multiple threads
     std::lock_guard<std::mutex> _lock(m_sortMutex);
     // If the list was sorted while waiting for the lock, return.
-    if (this->order == TIMEATSAMPLE_SORT && !forceResort)
+    if (order == TIMEATSAMPLE_SORT && !forceResort)
         return;
 
     // Perform sort.
 
     CompareTimeAtSample<WeightedEvent> comparitor(tofFactor, tofShift);
-    tbb::parallel_sort(this->events->begin(), this->events->end(), comparitor);
+    tbb::parallel_sort(events.begin(), events.end(), comparitor);
     // Save the order to avoid unnecessary re-sorting.
     this->order = TIMEATSAMPLE_SORT;    
 }
 
 size_t EventListWeightedEvent::getMemorySize() const {
-    return this->events->capacity() * sizeof(WeightedEvent) + sizeof(EventListWeightedEvent);
+    return this->events.capacity() * sizeof(WeightedEvent) + sizeof(EventListWeightedEvent);
 }
 
 void EventListWeightedEvent::generateHistogramTimeAtSample(const MantidVec &X, MantidVec &Y, MantidVec &E, const double &tofFactor,
@@ -102,18 +101,18 @@ void EventListWeightedEvent::generateHistogramPulseTime(const MantidVec &X, Mant
 
 void EventListWeightedEvent::generateHistogram(const MantidVec &X, MantidVec &Y, MantidVec &E, bool skipError) const {
     this->sortTof();
-    histogramForWeightsHelper(*(this->events.get()), X, Y, E);
+    histogramForWeightsHelper(this->events, X, Y, E);
 }
 
 void EventListWeightedEvent::getWeights(std::vector<double> &weights) const {
-    weights.reserve(this->getNumberEvents());
-    this->getWeightsHelper(*(this->events.get()), weights);
+    weights.reserve(this->events.size());
+    this->getWeightsHelper(this->events, weights);
 }
 
 void EventListWeightedEvent::getWeightErrors(std::vector<double> &weightErrors) const {
     // Set the capacity of the vector to avoid multiple resizes
-    weightErrors.reserve(this->getNumberEvents());
-    this->getWeightErrorsHelper(*(this->events.get()), weightErrors);
+    weightErrors.reserve(this->events.size());
+    this->getWeightErrorsHelper(this->events, weightErrors);
 }
 
 }

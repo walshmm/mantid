@@ -6,6 +6,14 @@
 #include "MantidKernel/DateAndTimeHelpers.h"
 #include "MantidDataObjects/Events.h"
 
+
+
+namespace Mantid {
+namespace DataObjects {
+
+using Types::Event::TofEvent;
+using namespace Mantid::API;
+
 // comparator for pulse time with tolerance
 struct comparePulseTimeTOFDelta {
   explicit comparePulseTimeTOFDelta(const Types::Core::DateAndTime &start, const double seconds)
@@ -30,15 +38,11 @@ struct comparePulseTimeTOFDelta {
   int64_t deltaNano;
 };
 
-namespace Mantid {
-namespace DataObjects {
-
-using Types::Event::TofEvent;
-using namespace Mantid::API;
-
 template <typename T, typename SELF>
-class EventListPulsetimeTofFunctionsTemplate : public EventListPulsetimeFunctionsTemplate<T, SELF>, public EventListTofFunctionsTemplate<T, SELF>
+class EventListPulsetimeTofFunctionsTemplate
 {
+
+using ThisClass = EventListPulsetimeTofFunctionsTemplate<T, SELF>;
 
 public:
   // using BASE = typename EventListPulsetimeFunctionsTemplate<T, SELF>::BASE;
@@ -145,7 +149,7 @@ bool compareEventPulseTimeTOF(const TofEvent &e1, const TofEvent &e2) {
  * @param output :: reference to an event list that will be output.
  * @throws std::invalid_argument If output is a reference to this EventListBase
  */
-void filterByPulseTime(DateAndTime start, DateAndTime stop, EventListBase &output) const {
+void filterByPulseTime(DateAndTime start, DateAndTime stop, EventList &output) const {
   if (this == &output) {
     throw std::invalid_argument("In-place filtering is not allowed");
   }
@@ -160,13 +164,15 @@ void filterByPulseTime(DateAndTime start, DateAndTime stop, EventListBase &outpu
   output.setHistogram(as_underlying().m_histogram);
   output.setSortOrder(as_underlying().order);
 
+  auto castedOutput = static_cast<SELF&>(output);
+
   // Iterate through all events (sorted by pulse time)
-  filterByPulseTimeHelper(*(as_underlying().events), start, stop, output.events);  
+  filterByPulseTimeHelper(*(as_underlying().events), start, stop, castedOutput.events);  
   
 }
 
 void filterByTimeAtSample(Types::Core::DateAndTime start, Types::Core::DateAndTime stop, double tofFactor,
-                                     double tofOffset, EventListBase &output) const {
+                                     double tofOffset, EventList &output) const {
   if (this == &output) {
     throw std::invalid_argument("In-place filtering is not allowed");
   }
@@ -181,8 +187,10 @@ void filterByTimeAtSample(Types::Core::DateAndTime start, Types::Core::DateAndTi
   output.setHistogram(as_underlying().m_histogram);
   output.setSortOrder(as_underlying().order);
 
-  filterByTimeAtSampleHelper(*(as_underlying().events), start, stop, tofFactor, tofOffset, output.events);
-  
+  auto castedOutput = static_cast<SELF&>(output);
+
+  filterByTimeAtSampleHelper(*(as_underlying().events), start, stop, tofFactor, tofOffset, castedOutput.events);
+
 }
 
 

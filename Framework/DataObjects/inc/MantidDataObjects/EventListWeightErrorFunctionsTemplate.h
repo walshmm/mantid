@@ -7,7 +7,7 @@
 namespace Mantid {
 namespace DataObjects {
 template <typename T, typename SELF>
-class EventListWeightErrorFunctionsTemplate : public EventListWeightFunctionsTemplate<T, SELF>, public EventListErrorFunctionsTemplate<T, SELF>
+class EventListWeightErrorFunctionsTemplate
 {
   
 

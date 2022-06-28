@@ -6,7 +6,7 @@
 namespace Mantid {
 namespace DataObjects {
 template <typename T, typename SELF>
-class EventListTofFunctionsTemplate : public EventListBaseFunctionsTemplate<T, SELF>
+class EventListTofFunctionsTemplate
 {
   public:
 
@@ -119,7 +119,7 @@ double getTofMin() const {
  */
 void convertTof(const double factor, const double offset) {
   // fix the histogram parameter
-  auto &x = mutableX();
+  auto &x = as_underlying().mutableX();
   x *= factor;
   x += offset;
 
@@ -141,7 +141,7 @@ void convertTof(const double factor, const double offset) {
  */
 void convertTof(std::function<double(double)> func, const int sorting) {
   // fix the histogram parameter
-  MantidVec &x = dataX();
+  MantidVec &x = as_underlying().dataX();
   transform(x.begin(), x.end(), x.begin(), func);
 
   // do nothing if sorting > 0

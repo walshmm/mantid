@@ -9,7 +9,7 @@ namespace DataObjects {
 using Types::Core::DateAndTime;
 
 template <typename T, typename SELF>
-class EventListWeightErrorPulsetimeTofFunctionsTemplate : public EventListWeightErrorTofFunctionsTemplate<T, SELF>, public EventListPulsetimeTofFunctionsTemplate<T, SELF>
+class EventListWeightErrorPulsetimeTofFunctionsTemplate
 {
 
     using ThisClass = EventListWeightErrorPulsetimeTofFunctionsTemplate<T, SELF>;

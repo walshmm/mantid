@@ -44,16 +44,16 @@ class EventListBaseFunctionsTemplate
                              "Y or E data is not possible");
   // Avoid flushing of YMode: we only change X but YMode depends on events.
   if (histogram.yMode() == HistogramData::Histogram::YMode::Uninitialized)
-    histogram.setYMode(m_histogram.yMode());
-  if (histogram.yMode() != m_histogram.yMode())
+    histogram.setYMode(as_underlying().m_histogram.yMode());
+  if (histogram.yMode() != as_underlying().m_histogram.yMode())
     throw std::runtime_error("EventListBase: setting histogram data with different "
                              "YMode is not possible");
 }
 
 HistogramData::Histogram &mutableHistogramRef() {
-  if (mru)
-    mru->deleteIndex(this);
-  return m_histogram;
+  if (as_underlying().mru)
+    as_underlying().mru->deleteIndex(this);
+  return as_underlying().m_histogram;
 }
 
   // --------------------------------------------------------------------------
@@ -237,36 +237,36 @@ void generateHistogram(const MantidVec &X, MantidVec &Y, MantidVec &E, bool skip
  * @param X :: The vector of doubles to set as the histogram limits.
  */
 void  setX(const Kernel::cow_ptr<HistogramData::HistogramX> &X) {
-  m_histogram.setX(X);
-  if (mru)
-    mru->deleteIndex(this);
+  as_underlying().m_histogram.setX(X);
+  if (as_underlying().mru)
+    as_underlying().mru->deleteIndex(this);
 }
 
 /** Deprecated, use mutableX() instead. Returns a reference to the x data.
  *  @return a reference to the X (bin) vector.
  */
 MantidVec & dataX() {
-  if (mru)
-    mru->deleteIndex(this);
-  return m_histogram.dataX();
+  if (as_underlying().mru)
+    as_underlying().mru->deleteIndex(this);
+  return as_underlying().m_histogram.dataX();
 }
 
 /** Deprecated, use x() instead. Returns a const reference to the x data.
  *  @return a reference to the X (bin) vector. */
-const MantidVec & dataX() const { return m_histogram.dataX(); }
+const MantidVec & dataX() const { return as_underlying().m_histogram.dataX(); }
 
 /// Deprecated, use x() instead. Returns the x data const
-const MantidVec & readX() const { return m_histogram.readX(); }
+const MantidVec & readX() const { return as_underlying().m_histogram.readX(); }
 
 /// Deprecated, use sharedX() instead. Returns a pointer to the x data
-Kernel::cow_ptr<HistogramData::HistogramX>  ptrX() const { return m_histogram.ptrX(); }
+Kernel::cow_ptr<HistogramData::HistogramX>  ptrX() const { return as_underlying().m_histogram.ptrX(); }
 
 /// Deprecated, use mutableDx() instead.
-MantidVec & dataDx() { return m_histogram.dataDx(); }
+MantidVec & dataDx() { return as_underlying().m_histogram.dataDx(); }
 /// Deprecated, use dx() instead.
-const MantidVec & dataDx() const { return m_histogram.dataDx(); }
+const MantidVec & dataDx() const { return as_underlying().m_histogram.dataDx(); }
 /// Deprecated, use dx() instead.
-const MantidVec & readDx() const { return m_histogram.readDx(); }
+const MantidVec & readDx() const { return as_underlying().m_histogram.readDx(); }
 
 // ==============================================================================================
 // --- Return Data Vectors --------------------------------------------------
@@ -299,7 +299,7 @@ MantidVec * makeDataE() const {
 }
 
 HistogramData::Histogram  histogram() const {
-  HistogramData::Histogram ret(m_histogram);
+  HistogramData::Histogram ret(as_underlying().m_histogram);
   ret.setSharedY(sharedY());
   ret.setSharedE(sharedE());
   return ret;
@@ -322,13 +322,13 @@ HistogramData::FrequencyStandardDeviations  frequencyStandardDeviations() const 
 }
 
 const HistogramData::HistogramY & y() const {
-  if (!mru)
+  if (!as_underlying().mru)
     throw std::runtime_error("' y()' called with no MRU set. This is not allowed.");
 
   return *sharedY();
 }
 const HistogramData::HistogramE & e() const {
-  if (!mru)
+  if (!as_underlying().mru)
     throw std::runtime_error("' e()' called with no MRU set. This is not allowed.");
 
   return *sharedE();
@@ -340,9 +340,9 @@ Kernel::cow_ptr<HistogramData::HistogramY>  sharedY() const {
   Kernel::cow_ptr<HistogramData::HistogramY> yData(nullptr);
 
   // Is the data in the mrulist?
-  if (mru) {
-    mru->ensureEnoughBuffersY(thread);
-    yData = mru->findY(thread, this);
+  if (as_underlying().mru) {
+    as_underlying().mru->ensureEnoughBuffersY(thread);
+    yData = as_underlying().mru->findY(thread, this);
   }
 
   if (!yData) {
@@ -354,14 +354,14 @@ Kernel::cow_ptr<HistogramData::HistogramY>  sharedY() const {
     yData = Kernel::make_cow<HistogramData::HistogramY>(std::move(Y));
 
     // Lets save it in the MRU
-    if (mru) {
-      mru->insertY(thread, yData, this);
+    if (as_underlying().mru) {
+      as_underlying().mru->insertY(thread, yData, this);
       auto eData = Kernel::make_cow<HistogramData::HistogramE>(std::move(E));
-      mru->ensureEnoughBuffersE(thread);
-      mru->insertE(thread, eData, this);
+      as_underlying().mru->ensureEnoughBuffersE(thread);
+      as_underlying().mru->insertE(thread, eData, this);
     }
   }
-  return yData;
+  return as_underlying().yData;
 }
 Kernel::cow_ptr<HistogramData::HistogramE>  sharedE() const {
   // This is the thread number from which this function was called.
@@ -370,9 +370,9 @@ Kernel::cow_ptr<HistogramData::HistogramE>  sharedE() const {
   Kernel::cow_ptr<HistogramData::HistogramE> eData(nullptr);
 
   // Is the data in the mrulist?
-  if (mru) {
-    mru->ensureEnoughBuffersE(thread);
-    eData = mru->findE(thread, this);
+  if (as_underlying().mru) {
+    as_underlying().mru->ensureEnoughBuffersE(thread);
+    eData = as_underlying().mru->findE(thread, this);
   }
 
   if (!eData) {
@@ -383,8 +383,8 @@ Kernel::cow_ptr<HistogramData::HistogramE>  sharedE() const {
     eData = Kernel::make_cow<HistogramData::HistogramE>(std::move(E));
 
     // Lets save it in the MRU
-    if (mru)
-      mru->insertE(thread, eData, this);
+    if (as_underlying().mru)
+      as_underlying().mru->insertE(thread, eData, this);
   }
   return eData;
 }
@@ -394,7 +394,7 @@ Kernel::cow_ptr<HistogramData::HistogramE>  sharedE() const {
  * @return reference to the Y vector.
  */
 const MantidVec &dataY() const {
-  if (!mru)
+  if (!as_underlying().mru)
     throw std::runtime_error("' dataY()' called with no MRU set. This is not allowed.");
 
   // WARNING: The Y data of sharedY() is stored in MRU, returning reference fine
@@ -408,7 +408,7 @@ const MantidVec &dataY() const {
  * @return reference to the E vector.
  */
 const MantidVec &dataE() const {
-  if (!mru)
+  if (!as_underlying().mru)
     throw std::runtime_error("' dataE()' called with no MRU set. This is not allowed.");
 
   // WARNING: The E data of sharedE() is stored in MRU, returning reference fine
@@ -485,7 +485,7 @@ void setSortOrder(const EventSortType order) const { as_underlying().order = ord
  *
  * @param newMRU :: new MRU for the workspace containing this EventListBase
  */
-void setMRU(EventWorkspaceMRU *newMRU) { mru = newMRU; }
+void setMRU(EventWorkspaceMRU *newMRU) { as_underlying().mru = newMRU; }
 
 
 //TODO: These series of get event type should probably be in their respective classes and not in this template
@@ -496,7 +496,7 @@ void setMRU(EventWorkspaceMRU *newMRU) { mru = newMRU; }
  * @return a reference to the list of weighted events
  * */
 std::vector<T> & getWeightedEventsNoTime() {
-  if (eventType != WEIGHTED_NOTIME)
+  if (as_underlying().eventType != WEIGHTED_NOTIME)
     throw std::runtime_error(" getWeightedEvents() called for an "
                              "EventListBase not of type WeightedEventNoTime. Use "
                              "getEvents() or getWeightedEvents().");
@@ -509,7 +509,7 @@ std::vector<T> & getWeightedEventsNoTime() {
  * @return a const reference to the list of weighted events
  * */
 const std::vector<T> & getWeightedEventsNoTime() const {
-  if (eventType != WEIGHTED_NOTIME)
+  if (as_underlying().eventType != WEIGHTED_NOTIME)
     throw std::runtime_error(" getWeightedEventsNoTime() called for "
                              "an EventListBase not of type WeightedEventNoTime. "
                              "Use getEvents() or getWeightedEvents().");
@@ -525,7 +525,7 @@ const std::vector<T> & getWeightedEventsNoTime() const {
  * @return a reference to the list of weighted events
  * */
 std::vector<T> & getWeightedEvents() {
-  if (eventType != WEIGHTED)
+  if (as_underlying().eventType != WEIGHTED)
     throw std::runtime_error(" getWeightedEvents() called for an "
                              "EventListBase not of type WeightedEvent. Use "
                              "getEvents() or getWeightedEventsNoTime().");
@@ -540,7 +540,7 @@ std::vector<T> & getWeightedEvents() {
  * @return a const reference to the list of weighted events
  * */
 const std::vector<T> & getWeightedEvents() const {
-  if (eventType != WEIGHTED)
+  if (as_underlying().eventType != WEIGHTED)
     throw std::runtime_error(" getWeightedEvents() called for an "
                              "EventListBase not of type WeightedEvent. Use "
                              "getEvents() or getWeightedEventsNoTime().");
@@ -555,7 +555,7 @@ const std::vector<T> & getWeightedEvents() const {
  * @return a reference to the list of non-weighted events
  * */
 std::vector<T> & getEvents() {
-  if (eventType != TOF)
+  if (as_underlying().eventType != TOF)
     throw std::runtime_error(" getEvents() called for an EventListBase "
                              "that has weights. Use getWeightedEvents() or "
                              "getWeightedEventsNoTime().");
@@ -570,14 +570,14 @@ std::vector<T> & getEvents() {
  * @return a const reference to the list of non-weighted events
  * */
 const std::vector<T> & getEvents() const {
-  if (eventType != TOF)
+  if (as_underlying().eventType != TOF)
     throw std::runtime_error(" getEvents() called for an EventListBase "
                              "that has weights. Use getWeightedEvents() or "
                              "getWeightedEventsNoTime().");
   return as_underlying().events;
 }
 
-EventType getEventType() const { return eventType; }
+EventType getEventType() const { return as_underlying().eventType; }
   /** Inequality comparator
  * @param rhs :: other EventListBase to compare
  * @return :: true if not equal.
@@ -591,7 +591,7 @@ bool operator!=(const SELF &rhs) const { return (!as_underlying().operator==(rhs
  */
 bool operator==(const SELF &rhs) const {
   return as_underlying().getNumberEvents() == rhs.getNumberEvents()
-  && *events == *(rhs.events);
+  && as_underlying().events == rhs.events;
 }
 
 // --------------------------------------------------------------------------
@@ -662,10 +662,10 @@ SELF &operator=(const T &rhs) {
   //TODO: Check if actual issue later, why would they lazily ovewrite a typed event list with a non corresponding type?
   //this.swapTo(rhs.eventType) // will do nothing if same type
   IEventList::operator=(rhs);
-  m_histogram = rhs.m_histogram;
-  events = rhs.events;
-  eventType = rhs.eventType;
-  order = rhs.order;
+  as_underlying().m_histogram = rhs.m_histogram;
+  as_underlying().events = rhs.events;
+  as_underlying().eventType = rhs.eventType;
+  as_underlying().order = rhs.order;
   return *this;
 }
 
@@ -677,9 +677,9 @@ void clearData() { as_underlying().clear(false); }
   /** Clear the list of events and any
  * associated detector ID's.
  * */
-void clear(const bool removeDetIDs) {
-  if (mru)
-    mru->deleteIndex(this);
+void clear(const bool removeDetIDs = true) {
+  if (as_underlying().mru)
+    as_underlying().mru->deleteIndex(static_cast<SELF*>(this));
   as_underlying().events.clear();
   std::vector<T>().swap(as_underlying().events); // STL Trick to release memory
   if (removeDetIDs)
@@ -706,7 +706,7 @@ void reserve(size_t num) {
    * @param event :: TofEvent to add at the end of the list.
    * */
   inline void addEventQuickly(const T &event) {
-    events->emplace_back(event);
+    as_underlying().events->emplace_back(event);
     as_underlying().order = UNSORTED;
   }
 
@@ -718,23 +718,42 @@ void sortTof() const {
     return;
 
   // Avoid sorting from multiple threads
-  std::lock_guard<std::mutex> _lock(m_sortMutex);
+  std::lock_guard<std::mutex> _lock(as_underlying().m_sortMutex);
   // If the list was sorted while waiting for the lock, return.
   if (as_underlying().order == TOF_SORT)
     return;
 
   // TODO determine how these are setup to compare
 
-  tbb::parallel_sort(events->begin(), events->end());
+  tbb::parallel_sort(as_underlying().events->begin(), as_underlying().events->end());
   // Save the order to avoid unnecessary re-sorting.
   as_underlying().order = TOF_SORT;
+}
+
+void sortTimeAtSample(const double &tofFactor, const double &tofShift, bool forceResort) const {
+  // Check pre-cached sort flag.
+  if (this->order == TIMEATSAMPLE_SORT && !forceResort)
+    return;
+
+  // Avoid sorting from multiple threads
+  std::lock_guard<std::mutex> _lock(as_underlying().m_sortMutex);
+  // If the list was sorted while waiting for the lock, return.
+  if (this->order == TIMEATSAMPLE_SORT && !forceResort)
+    return;
+
+
+  CompareTimeAtSample<T> comparitor(tofFactor, tofShift);
+  tbb::parallel_sort(as_underlying().events.begin(), as_underlying().events.end(), comparitor);
+
+  // Save the order to avoid unnecessary re-sorting.
+  as_underlying().order = TIMEATSAMPLE_SORT;
 }
 
 protected:
 
 // private:
 
-const HistogramData::Histogram &histogramRef() const { return m_histogram; }
+const HistogramData::Histogram &histogramRef() const { return as_underlying().m_histogram; }
 
 /// Used by Histogram1D::copyDataFrom for dynamic dispatch for `other`.
 void copyDataInto(Histogram1D &sink) const { sink.setHistogram(histogram()); }
@@ -745,10 +764,10 @@ void copyDataInto(T &sink) const {
   //sink.switchTo(eventType)
   //have wrapper perform type swap before attempting copy into
   //TODO: Check if actual issue later, why would they lazily ovewrite a typed event list with a non corresponding type?
-  sink.m_histogram = m_histogram;
-  sink.events = events;
-  sink.eventType = eventType;
-  sink.order = order;
+  sink.m_histogram = as_underlying().m_histogram;
+  sink.events = as_underlying().events;
+  sink.eventType = as_underlying().eventType;
+  sink.order = as_underlying().order;
 }
 
 /** Get the weight error of each event in this EventListBase.
@@ -826,6 +845,11 @@ std::size_t maskConditionHelper(std::vector<T> &events, const std::vector<bool> 
     EventListBaseFunctionsTemplate() = default;
 
     inline SELF & as_underlying()
+    {
+        return static_cast<SELF&>(*this);
+    }
+    
+    inline SELF & as_underlying() const
     {
         return static_cast<SELF&>(*this);
     }

@@ -102,7 +102,7 @@ EventList::~EventList() {
 }
 
 /// Copy data from another EventList, via ISpectrum reference.
-void EventList::copyDataFrom(const ISpectrum &source) { this->eventList->copyDataInto(source); }
+void EventList::copyDataFrom(const ISpectrum &source) { source.copyDataInto(*(this->eventList));}
 
 // --------------------------------------------------------------------------
 /** Create an EventList from a histogram. This converts bins to weighted
@@ -398,6 +398,13 @@ std::vector<WeightedEventNoTime> &EventList::getWeightedEventsNoTime() {
 const std::vector<WeightedEventNoTime> &EventList::getWeightedEventsNoTime() const {
   return this->eventList->getWeightedEventsNoTime();
 }
+
+  std::vector<TofEventNoTime> &EventList::getEventsNoTime(){
+    return this->eventList->getEventsNoTime();
+  }
+  const std::vector<TofEventNoTime> &EventList::getEventsNoTime() const{
+    return this->eventList->getEventsNoTime();
+  }
 
 /** Clear the list of events and any
  * associated detector ID's.
@@ -708,7 +715,7 @@ template <class T> typename std::vector<T>::iterator static findFirstEvent(std::
  * @throw runtime_error if the EventListBase does not have weighted events
  */
 template <class T>
-void EventListBase::histogramForWeightsHelper(const std::vector<T> &events, const MantidVec &X, MantidVec &Y,
+static void EventListBase::histogramForWeightsHelper(const std::vector<T> &events, const MantidVec &X, MantidVec &Y,
                                           MantidVec &E) {
   // For slight speed=up.
   size_t x_size = X.size();

@@ -5,7 +5,7 @@
 namespace Mantid {
 namespace DataObjects {
 template <typename T, typename SELF>
-class EventListErrorFunctionsTemplate : public EventListBaseFunctionsTemplate<T, SELF>
+class EventListErrorFunctionsTemplate
 {
 public:
 // using BASE = typename EventListErrorFunctionsTemplate<T, SELF>::EventListBaseFunctionsTemplate<T, SELF>;

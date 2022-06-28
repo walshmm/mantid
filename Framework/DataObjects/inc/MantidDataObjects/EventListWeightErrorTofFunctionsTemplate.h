@@ -7,7 +7,7 @@
 namespace Mantid {
 namespace DataObjects {
 template <typename T, typename SELF>
-class EventListWeightErrorTofFunctionsTemplate : public EventListWeightErrorFunctionsTemplate<T, SELF>, public  EventListTofFunctionsTemplate<T, SELF>
+class EventListWeightErrorTofFunctionsTemplate
 {
   using ThisClass = EventListWeightErrorTofFunctionsTemplate<T, SELF>;
 

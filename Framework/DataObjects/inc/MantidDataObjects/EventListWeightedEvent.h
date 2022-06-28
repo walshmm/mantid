@@ -14,15 +14,32 @@ namespace Mantid {
 namespace DataObjects {
 // Share the same definition of wrapper/interface
 class DLLExport EventListWeightedEvent : 
-public EventListBase, 
+public EventListBase,
+// extract this out to another class?
 public EventListWeightErrorPulsetimeTofFunctionsTemplate<WeightedEvent, EventListWeightedEvent>,
+public EventListWeightErrorTofFunctionsTemplate<WeightedEvent, EventListWeightedEvent>,
+public EventListWeightErrorFunctionsTemplate<WeightedEvent, EventListWeightedEvent>,
+public EventListPulsetimeTofFunctionsTemplate<WeightedEvent, EventListWeightedEvent>,
+public EventListWeightFunctionsTemplate<WeightedEvent, EventListWeightedEvent>,
+public EventListErrorFunctionsTemplate<WeightedEvent, EventListWeightedEvent>,
+public EventListTofFunctionsTemplate<WeightedEvent, EventListWeightedEvent>,
+public EventListPulsetimeFunctionsTemplate<WeightedEvent, EventListWeightedEvent>,
+public EventListBaseFunctionsTemplate<WeightedEvent, EventListWeightedEvent>,
+// END: extract this out to another class?
 public EventListPermutationsMinusHelperFunctions<WeightedEvent> {
 
+    friend class EventListBaseFunctionsTemplate<WeightedEvent, EventListWeightedEvent>;
     public:
+    using EventListBaseFunctionsTemplate<WeightedEvent, EventListWeightedEvent>::clear;
+    using EventListBaseFunctionsTemplate<WeightedEvent, EventListWeightedEvent>::getNumberEvents;
+    using EventListBaseFunctionsTemplate<WeightedEvent, EventListWeightedEvent>::sortTof;
+    using EventListWeightFunctionsTemplate<WeightedEvent, EventListWeightedEvent>::getWeightsHelper;
 
     EventListWeightedEvent(const std::vector<WeightedEvent> &events);
+    EventListWeightedEvent(const EventList &rhs);
     EventListWeightedEvent();
-    bool equals(const EventListBase &rhs, const double tolTof, const double tolWeight,
+    ~EventListWeightedEvent();
+    bool equals(const EventList &rhs, const double tolTof, const double tolWeight,
                        const int64_t tolPulse) const  ;
     WeightedEvent getEvent(size_t event_number)  ;
     void sortTimeAtSample(const double &tofFactor, const double &tofShift, bool forceResort) const  ;
@@ -33,11 +50,11 @@ public EventListPermutationsMinusHelperFunctions<WeightedEvent> {
     void generateHistogram(const MantidVec &X, MantidVec &Y, MantidVec &E, bool skipError) const  ;
     void getWeights(std::vector<double> &weights) const  ;
     void getWeightErrors(std::vector<double> &weightErrors) const  ;
-    EventListWeightedEvent &operator-=(const EventListBase &more_events);
+    EventListWeightedEvent &operator-=(const EventList &more_events);
 
-    private:
+    protected:
      /// List of Events
-    std::vector<WeightedEvent> events;
+    mutable std::vector<WeightedEvent> events;
 };
 
 } // namespace DataObjects

@@ -1,12 +1,18 @@
 #pragma once
 
 #include "MantidDataObjects/EventListBaseFunctionsTemplate.h"
+#include "MantidKernel/DateAndTime.h"
+#include "MantidKernel/DateAndTimeHelpers.h"
 #include "MantidDataObjects/Events.h"
 
 namespace Mantid {
 namespace DataObjects {
+  using namespace Mantid::API;
+  using Types::Event::TofEvent;
+  using Mantid::Types::Core::DateAndTime;
+
 template <typename T, typename SELF>
-class EventListPulsetimeFunctionsTemplate : public EventListBaseFunctionsTemplate<T, SELF>
+class EventListPulsetimeFunctionsTemplate
 {
 public:
   // using BASE = typename EventListPulsetimeFunctionsTemplate<T, SELF>::EventListBaseFunctionsTemplate<T, SELF>;
@@ -18,7 +24,7 @@ public:
   EventListPulsetimeFunctionsTemplate(std::shared_ptr<std::vector<T>> events): 
   EventListBaseFunctionsTemplate<T, SELF>(events){}
 
-using Mantid::Types::Core::DateAndTime;
+
 
 void sort(const EventSortType order) const {
   if (order == UNSORTED) {
@@ -65,7 +71,7 @@ bool compareEventPulseTime(const TofEvent &e1, const TofEvent &e2) { return (e1.
  * @param seek_pulsetime :: pulse time to find (typically the first bin X[0])
  * @return iterator where the first event matching it is.
  */
-typename std::vector<T>::const_iterator findFirstPulseEvent(const std::vector<T> &events,
+static typename std::vector<T>::const_iterator findFirstPulseEvent(const std::vector<T> &events,
                                                                        const double seek_pulsetime) {
   auto itev = events.begin();
   auto itev_end = events.end(); // cache for speed
@@ -136,8 +142,8 @@ void addPulsetimesHelper(std::vector<T> &events, const std::vector<double> &seco
 void getPulseTimeMinMax(Mantid::Types::Core::DateAndTime &tMin,
                                    Mantid::Types::Core::DateAndTime &tMax) const {
   // set up as the minimum available date time.
-  tMax = DateAndTime::minimum();
-  tMin = DateAndTime::maximum();
+  tMax = Mantid::Types::Core::DateAndTime::minimum();
+  tMin = Mantid::Types::Core::DateAndTime::maximum();
 
   // no events is a soft error
   if (as_underlying().empty())
@@ -152,7 +158,7 @@ void getPulseTimeMinMax(Mantid::Types::Core::DateAndTime &tMin,
 
   // now we are stuck with a linear search
   size_t numEvents = as_underlying().events.size();
-  DateAndTime temp = tMax; // start with the smallest possible value
+  Mantid::Types::Core::DateAndTime temp = tMax; // start with the smallest possible value
   for (size_t i = 0; i < numEvents; i++) {
     temp = as_underlying().events[i].pulseTime();
     
@@ -378,9 +384,9 @@ void splitByTime(Kernel::TimeSplitterType &splitter, std::vector<EventListBase *
   for (size_t i = 0; i < numOutputs; i++) {
     outputs[i]->clear();
     outputs[i]->setDetectorIDs(as_underlying().getDetectorIDs());
-    outputs[i]->setHistogram(m_histogram);
+    outputs[i]->setHistogram(as_underlying().m_histogram);
     // Match the output event type.
-    outputs[i]->switchTo(eventType);
+    outputs[i]->switchTo(as_underlying().eventType);
   }
 
   // Do nothing if there are no entries
@@ -465,9 +471,9 @@ void splitByPulseTime(Kernel::TimeSplitterType &splitter, std::map<int, EventLis
     EventListBase *opeventlist = outiter->second;
     opeventlist->clear();
     opeventlist->setDetectorIDs(as_underlying().getDetectorIDs());
-    opeventlist->setHistogram(m_histogram);
+    opeventlist->setHistogram(as_underlying().m_histogram);
     // Match the output event type.
-    opeventlist->switchTo(eventType);
+    opeventlist->switchTo(as_underlying().eventType);
   }
 
   // Split
@@ -545,19 +551,19 @@ void splitByPulseTimeHelper(Kernel::TimeSplitterType &splitter, std::map<int, Ev
  */
 // TODO/NOW - TEST
 void splitByPulseTimeWithMatrix(const std::vector<int64_t> &vec_times, const std::vector<int> &vec_target,
-                                           std::map<int, EventListBase *> outputs) const {
+                                           std::map<int, EventList *> outputs) const {
   // Start by sorting the event list by pulse time.
   as_underlying().sortPulseTimeTOF();
 
   // Initialize all the output event lists
-  std::map<int, EventListBase *>::iterator outiter;
+  std::map<int, EventList *>::iterator outiter;
   for (outiter = outputs.begin(); outiter != outputs.end(); ++outiter) {
-    EventListBase *opeventlist = outiter->second;
+    SELF *opeventlist = outiter->second;
     opeventlist->clear();
     opeventlist->setDetectorIDs(as_underlying().getDetectorIDs());
-    opeventlist->setHistogram(m_histogram);
+    opeventlist->setHistogram(as_underlying().m_histogram);
     // Match the output event type.
-    opeventlist->switchTo(eventType);
+    opeventlist->switchTo(as_underlying().eventType);
   }
 
   // Split

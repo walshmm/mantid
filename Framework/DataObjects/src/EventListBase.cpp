@@ -63,7 +63,7 @@ EventListBase::EventListBase(EventWorkspaceMRU *mru, specnum_t specNo):
 
 /** Constructor copying from an existing event list
  * @param rhs :: EventListBase object to copy*/
-EventListBase::EventListBase(const EventListBase &rhs):  m_histogram(rhs.m_histogram), mru{nullptr} {
+EventListBase::EventListBase(const EventList &rhs): IEventList(rhs), m_histogram(rhs.m_histogram), mru{nullptr} {
 
 }
 
@@ -378,6 +378,8 @@ std::vector<WeightedEventNoTime> &EventListBase::getWeightedEventsNoTime() {
   throwUnimplementedError();
 }
 
+
+
 // /** Return the list of WeightedEvent contained.
 //  * NOTE! This should be used for testing purposes only, as much as possible.
 //  *
@@ -406,6 +408,13 @@ const std::vector<WeightedEventNoTime> &EventListBase::getWeightedEventsNoTime()
 void EventListBase::clear(const bool removeDetIDs) {
   throwUnimplementedError();
 }
+
+  std::vector<TofEventNoTime> &EventListBase::getEventsNoTime(){
+   throwUnimplementedError();
+  }
+  const std::vector<TofEventNoTime> &EventListBase::getEventsNoTime() const{
+    throwUnimplementedError();
+  }
 
 /** Clear any unused event lists (the ones that do not
  * match the currently used type).

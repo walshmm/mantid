@@ -7,33 +7,23 @@ using Types::Event::TofEvent;
 using namespace Mantid::API;
 
 
-EventListTofEvent::EventListTofEvent(){
-}
 
-/** Constructor, taking a vector of events.
- * @param events :: Vector of TofEvent's */
-EventListTofEvent::EventListTofEvent(const std::vector<TofEvent> &events){
-  this->events->assign(events.begin(), events.end());
-}
 
 /// Constructor (empty)
 // EventWorkspace is always histogram data and so is thus EventListBase
-EventListTofEvent::EventListBase()
-    : EventListTofEvent(), m_histogram(HistogramData::Histogram::XMode::BinEdges, HistogramData::Histogram::YMode::Counts), eventType(TOF),
-      order(UNSORTED), mru(nullptr) {}
+EventListTofEvent::EventListTofEvent()
+    : EventListBase() {}
 
 /** Constructor with a MRU list
  * @param mru :: pointer to the MRU of the parent EventWorkspace
  * @param specNo :: the spectrum number for the event list
  */
-EventListTofEvent::EventListBase(EventWorkspaceMRU *mru, specnum_t specNo)
-    :EventListTofEvent(), IEventList(specNo),
-      m_histogram(HistogramData::Histogram::XMode::BinEdges, HistogramData::Histogram::YMode::Counts), eventType(TOF),
-      order(UNSORTED), mru(mru) {}
+EventListTofEvent::EventListTofEvent(EventWorkspaceMRU *mru, specnum_t specNo)
+    :EventListBase(mru, specNo) {}
 
 /** Constructor copying from an existing event list
  * @param rhs :: EventListBase object to copy*/
-EventListTofEvent::EventListBase(const EventListBase &rhs) : IEventList(rhs), m_histogram(rhs.m_histogram), mru{nullptr} {
+EventListTofEvent::EventListTofEvent(const EventList &rhs) : EventListBase(rhs) {
   // Note that operator= also assigns m_histogram, but the above use of the copy
   // constructor avoid a memory allocation and is thus faster.
   this->operator=(rhs);
@@ -41,16 +31,15 @@ EventListTofEvent::EventListBase(const EventListBase &rhs) : IEventList(rhs), m_
 
 /** Constructor, taking a vector of events->
  * @param events :: Vector of TofEvent's */
-EventListTofEvent::EventListBase(const std::vector<TofEvent> &events)
-    :EventListTofEvent(),  m_histogram(HistogramData::Histogram::XMode::BinEdges, HistogramData::Histogram::YMode::Counts), eventType(TOF),
-      mru(nullptr) {
-  this->events->assign(events.begin(), events.end());
+EventListTofEvent::EventListTofEvent(const std::vector<TofEvent> &events)
+    :EventListBase(events) {
+  this->events.assign(events.begin(), events.end());
   this->eventType = TOF;
   this->order = UNSORTED;
 }
 
 /// Destructor
-EventListTofEvent::~EventListBase() {
+EventListTofEvent::~EventListTofEvent() {
   // Note: These two lines do not seem to have an effect on releasing memory
   //  at least on Linux. (Memory usage seems to increase event after deleting
   //  EventWorkspaces.
@@ -64,7 +53,7 @@ EventListTofEvent::~EventListBase() {
 }
 
 
-bool EventListTofEvent::equals(const EventListBase &rhs, const double tolTof, const double tolWeight,
+bool EventListTofEvent::equals(const EventList &rhs, const double tolTof, const double tolWeight,
                        const int64_t tolPulse) const {
     if (this->getNumberEvents() != rhs.getNumberEvents())
         return false;
@@ -97,13 +86,13 @@ void EventListTofEvent::sortTimeAtSample(const double &tofFactor, const double &
     // Perform sort.
 
     CompareTimeAtSample<TofEvent> comparitor(tofFactor, tofShift);
-    tbb::parallel_sort(events->begin(), events->end(), comparitor);
+    tbb::parallel_sort(events.begin(), events.end(), comparitor);
     // Save the order to avoid unnecessary re-sorting.
     this->order = TIMEATSAMPLE_SORT;    
 }
 
 size_t EventListTofEvent::getMemorySize() const {
-    return this->events->capacity() * sizeof(TofEvent) + sizeof(EventListTofEvent);
+    return this->events.capacity() * sizeof(TofEvent) + sizeof(EventListTofEvent);
 }
 
 void EventListTofEvent::generateHistogramTimeAtSample(const MantidVec &X, MantidVec &Y, MantidVec &E, const double &tofFactor,
@@ -120,7 +109,7 @@ void EventListTofEvent::generateHistogramPulseTime(const MantidVec &X, MantidVec
     this->sortPulseTime();
     this->generateCountsHistogramPulseTime(X, Y);
     if (!skipError)
-      this->generateErrorsHistogram(Y, E);
+      this->EventListBaseFunctionsTemplate<Types::Event::TofEvent, EventListTofEvent>::generateErrorsHistogram(Y, E);
 }
 
 // --------------------------------------------------------------------------
@@ -166,10 +155,10 @@ void EventListTofEvent::generateCountsHistogramPulseTime(const MantidVec &X, Man
 
   //NOTE:  In the original implementation this only really did stuff for TofEvents? Is that right?
 
-  if (!this->events->empty()) {
+  if (!this->events.empty()) {
     // Iterate through all events (sorted by pulse time)
     auto itev = findFirstPulseEvent(this->events, X[0]);
-    auto itev_end = events->cend(); // cache for speed
+    auto itev_end = events.cend(); // cache for speed
     // The above can still take you to end() if no events above X[0], so check
     // again.
     if (itev == itev_end)
@@ -226,7 +215,7 @@ void EventListTofEvent::generateCountsHistogramPulseTime(const MantidVec &X, Man
 void EventListTofEvent::generateCountsHistogramPulseTime(const double &xMin, const double &xMax, MantidVec &Y,
                                                  const double TOF_min, const double TOF_max) const {
 
-  if (this->events->empty())
+  if (this->events.empty())
     return;
 
   size_t nBins = Y.size();
@@ -280,10 +269,10 @@ void EventListTofEvent::generateCountsHistogramTimeAtSample(const MantidVec &X, 
   //---------------------------------
 
   //NOTE:  In the original implementation this only really did stuff for TofEvents? Is that right?
-  if (!this->events->empty()) {
+  if (!this->events.empty()) {
     // Iterate through all events (sorted by pulse time)
     auto itev = findFirstTimeAtSampleEvent(this->events, X[0], tofFactor, tofOffset);
-    std::vector<TofEvent>::const_iterator itev_end = events->end(); // cache for speed
+    std::vector<TofEvent>::const_iterator itev_end = events.end(); // cache for speed
     // The above can still take you to end() if no events above X[0], so check
     // again.
     if (itev == itev_end)

@@ -5,7 +5,7 @@
 namespace Mantid {
 namespace DataObjects {
 template <typename T, typename SELF>
-class EventListWeightFunctionsTemplate : public EventListBaseFunctionsTemplate<T, SELF>
+class EventListWeightFunctionsTemplate
 {
   public:
 
@@ -18,7 +18,7 @@ protected:
  * @param events :: source vector of events
  * @param weights :: vector to fill
  */
-void getWeightsHelper(const std::vector<T> &events, std::vector<double> &weights) {
+static void getWeightsHelper(const std::vector<T> &events, std::vector<double> &weights) {
   weights.clear();
   weights.reserve(events.size());
   std::transform(events.cbegin(), events.cend(), std::back_inserter(weights),

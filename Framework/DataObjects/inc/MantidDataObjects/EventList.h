@@ -144,6 +144,9 @@ public:
   std::vector<WeightedEventNoTime> &getWeightedEventsNoTime();
   const std::vector<WeightedEventNoTime> &getWeightedEventsNoTime() const;
 
+  std::vector<TofEventNoTime> &getEventsNoTime();
+  const std::vector<TofEventNoTime> &getEventsNoTime() const;
+
   void clear(const bool removeDetIDs = true) override;
   void clearUnused();
 

@@ -15,7 +15,7 @@ namespace Mantid {
 namespace API {
 
 /// What kind of event list is being stored
-enum EventType { TOF, WEIGHTED, WEIGHTED_NOTIME };
+enum EventType { TOF, WEIGHTED, WEIGHTED_NOTIME, NOTIME };
 
 /** IEventList : Interface to Mantid::DataObjects::EventList class, used to
  * expose to PythonAPI

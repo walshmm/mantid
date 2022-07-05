@@ -373,6 +373,7 @@ void FilterEvents::processAlgorithmProperties() {
     g_log.error(errss.str());
     throw std::invalid_argument(errss.str());
   }
+  m_eventWS->switchEventType(Mantid::API::EventType::NOTIME);
 
   // Process splitting workspace (table or data)
   API::Workspace_sptr tempws = this->getProperty("SplitterWorkspace");

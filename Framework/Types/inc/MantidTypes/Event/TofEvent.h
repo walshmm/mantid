@@ -14,6 +14,7 @@ namespace DataObjects {
 class EventList;
 class WeightedEvent;
 class WeightedEventNoTime;
+class TofEventNoTime;
 } // namespace DataObjects
 namespace DataHandling {
 class LoadEventNexus;
@@ -31,6 +32,7 @@ class MANTID_TYPES_DLL TofEvent {
   /// EventList has the right to mess with TofEvent.
   friend class DataObjects::EventList;
   friend class DataObjects::WeightedEvent;
+  friend class DataObjects::TofEventNoTime;
   friend class DataObjects::WeightedEventNoTime;
   friend class DataHandling::LoadEventNexus; // Needed while the ISIS hack of
                                              // spreading events out in a bin

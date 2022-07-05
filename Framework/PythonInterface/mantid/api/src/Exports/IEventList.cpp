@@ -16,6 +16,7 @@
 
 using Mantid::API::EventType;
 using Mantid::API::IEventList;
+using Mantid::API::NOTIME;
 using Mantid::API::TOF;
 using Mantid::API::WEIGHTED;
 using Mantid::API::WEIGHTED_NOTIME;
@@ -45,6 +46,7 @@ void export_IEventList() {
       .value("TOF", TOF)
       .value("WEIGHTED", WEIGHTED)
       .value("WEIGHTED_NOTIME", WEIGHTED_NOTIME)
+      .value("NOTIME", NOTIME)
       .export_values();
 
   class_<IEventList, bases<Mantid::API::ISpectrum>, boost::noncopyable>("IEventList", no_init)

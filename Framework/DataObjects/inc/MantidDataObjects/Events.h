@@ -41,6 +41,7 @@ class DLLExport WeightedEvent : public Types::Event::TofEvent {
   /// EventList has the right to mess with WeightedEvent.
   friend class EventList;
   friend class WeightedEventNoTime;
+  friend class TofEventNoTime;
   friend class tofGreaterOrEqual;
   friend class tofGreater;
 
@@ -78,6 +79,7 @@ public:
 };
 #pragma pack(pop)
 
+// class TofEventNoTime;
 //==========================================================================================
 /** Info about a single neutron detection event, including a weight and error
  *value,
@@ -92,6 +94,7 @@ class DLLExport WeightedEventNoTime {
 
   /// EventList has the right to mess with this
   friend class EventList;
+  friend class TofEventNoTime;
   friend class tofGreaterOrEqual;
   friend class tofGreater;
 
@@ -124,6 +127,8 @@ public:
 
   WeightedEventNoTime(const Types::Event::TofEvent &);
 
+  WeightedEventNoTime(const TofEventNoTime &);
+
   WeightedEventNoTime();
 
   bool operator==(const WeightedEventNoTime &rhs) const;
@@ -153,6 +158,69 @@ public:
   friend std::ostream &operator<<(std::ostream &os, const WeightedEvent &event);
 };
 #pragma pack(pop)
+
+#pragma pack(push, 4) // Ensure the structure is no larger than it needs to
+class DLLExport TofEventNoTime {
+  /// EventList has the right to mess with this
+  friend class EventList;
+  friend class WeightedEventNoTime;
+  friend class tofGreaterOrEqual;
+  friend class tofGreater;
+
+protected:
+  /// The 'x value' (e.g. time-of-flight) of this neutron
+  double m_tof;
+
+public:
+  /// Constructor, specifying only the time of flight
+  TofEventNoTime(double time_of_flight);
+
+  TofEventNoTime(const WeightedEventNoTime &);
+
+  TofEventNoTime(const WeightedEvent &);
+
+  TofEventNoTime(const Types::Event::TofEvent &);
+
+  TofEventNoTime();
+
+  bool operator==(const TofEventNoTime &rhs) const;
+
+  /** < comparison operator, using the TOF to do the comparison.
+   * @param rhs: the other WeightedEventNoTime to compare.
+   * @return true if this->m_tof < rhs.m_tof
+   */
+  bool operator<(const TofEventNoTime &rhs) const { return (this->m_tof < rhs.m_tof); }
+
+  /** < comparison operator, using the TOF to do the comparison.
+   * @param rhs_tof: the other time of flight to compare.
+   * @return true if this->m_tof < rhs.m_tof
+   */
+  bool operator<(const double rhs_tof) const { return (this->m_tof < rhs_tof); }
+
+  bool equals(const TofEventNoTime &rhs, const double tolTof) const;
+
+  double operator()() const;
+  double tof() const;
+  Mantid::Types::Core::DateAndTime pulseTime() const;
+  double weight() const;
+  double error() const;
+  double errorSquared() const;
+
+  /// Output a string representation of the event to a stream
+  friend std::ostream &operator<<(std::ostream &os, const WeightedEvent &event);
+};
+#pragma pack(pop)
+
+/// Return the weight of the event - exactly 1.0 always
+inline double TofEventNoTime::weight() const { return 1.0; }
+
+inline double TofEventNoTime::tof() const { return this->m_tof; }
+
+/// Return the error of the event - exactly 1.0 always
+inline double TofEventNoTime::error() const { return 1.0; }
+
+/// Return the errorSquared of the event - exactly 1.0 always
+inline double TofEventNoTime::errorSquared() const { return 1.0; }
 
 //==========================================================================================
 // WeightedEvent inlined member function definitions
@@ -195,6 +263,13 @@ inline double WeightedEventNoTime::error() const { return std::sqrt(double(m_err
 
 /// Return the squared error of the neutron, as a double
 inline double WeightedEventNoTime::errorSquared() const { return m_errorSquared; }
+
+/** Return the pulse time; this returns 0 since this
+ *  type of Event has no time associated.
+ */
+inline Types::Core::DateAndTime TofEventNoTime::pulseTime() const { return 0; }
+
+inline double TofEventNoTime::operator()() const { return m_tof; }
 
 } // namespace DataObjects
 } // namespace Mantid

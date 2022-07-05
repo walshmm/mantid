@@ -191,6 +191,9 @@ WeightedEventNoTime::WeightedEventNoTime(const WeightedEvent &rhs)
  */
 WeightedEventNoTime::WeightedEventNoTime(const TofEvent &rhs) : m_tof(rhs.m_tof), m_weight(1.0), m_errorSquared(1.0) {}
 
+WeightedEventNoTime::WeightedEventNoTime(const TofEventNoTime &rhs)
+    : m_tof(rhs.m_tof), m_weight(1.0), m_errorSquared(1.0) {}
+
 /// Empty constructor
 WeightedEventNoTime::WeightedEventNoTime() : m_tof(0.0), m_weight(1.0), m_errorSquared(1.0) {}
 
@@ -218,6 +221,53 @@ bool WeightedEventNoTime::equals(const WeightedEventNoTime &rhs, const double to
   if (std::fabs(this->m_weight - rhs.m_weight) > tolWeight)
     return false;
   if (std::fabs(this->m_errorSquared - rhs.m_errorSquared) > tolWeight)
+    return false;
+  // then it is just if the pulse-times are equal
+  return true;
+}
+
+/*
+    tofevent no time
+
+
+
+*/
+
+/** Constructor, tof only:
+ * @param time_of_flight: tof in microseconds.
+ */
+TofEventNoTime::TofEventNoTime(double time_of_flight) : m_tof(time_of_flight) {}
+
+/** Constructor, copy from a WeightedEvent object
+ * @param rhs: source WeightedEvent
+ */
+TofEventNoTime::TofEventNoTime(const WeightedEvent &rhs) : m_tof(rhs.m_tof) {}
+
+/** Constructor, copy from another TofEvent object
+ * @param rhs: source TofEvent
+ */
+TofEventNoTime::TofEventNoTime(const TofEvent &rhs) : m_tof(rhs.m_tof) {}
+
+TofEventNoTime::TofEventNoTime(const WeightedEventNoTime &rhs) : m_tof(rhs.m_tof) {}
+
+/** Comparison operator.
+ * @param rhs :: event to which we are comparing.
+ * @return true if all elements of this event are identical
+ *  */
+bool TofEventNoTime::operator==(const TofEventNoTime &rhs) const { return (this->m_tof == rhs.m_tof); }
+
+/**
+ * Compare two events within the specified tolerance
+ *
+ * @param rhs the other TofEvent to compare
+ * @param tolTof the tolerance of a difference in m_tof.
+ * @param tolWeight the tolerance of a difference in m_weight
+ * and m_errorSquared.
+ *
+ * @return True if the are the same within the specifed tolerances
+ */
+bool TofEventNoTime::equals(const TofEventNoTime &rhs, const double tolTof) const {
+  if (std::fabs(this->m_tof - rhs.m_tof) > tolTof)
     return false;
   // then it is just if the pulse-times are equal
   return true;

@@ -68,6 +68,8 @@ public:
 
   EventList(const std::vector<WeightedEventNoTime> &events);
 
+  EventList(const std::vector<TofEventNoTime> &events);
+
   ~EventList() override;
 
   void copyDataFrom(const ISpectrum &source) override;
@@ -88,6 +90,8 @@ public:
   EventList &operator+=(const std::vector<WeightedEventNoTime> &more_events);
 
   EventList &operator+=(const EventList &more_events);
+
+  EventList &operator+=(const std::vector<TofEventNoTime> &more_events);
 
   EventList &operator-=(const EventList &more_events);
 
@@ -127,6 +131,11 @@ public:
     this->order = UNSORTED;
   }
 
+  inline void addEventQuickly(const TofEventNoTime &event) {
+    this->eventsNoTime.emplace_back(event);
+    this->order = UNSORTED;
+  }
+
   Mantid::API::EventType getEventType() const override;
 
   void switchTo(Mantid::API::EventType newType) override;
@@ -141,6 +150,9 @@ public:
 
   std::vector<WeightedEventNoTime> &getWeightedEventsNoTime();
   const std::vector<WeightedEventNoTime> &getWeightedEventsNoTime() const;
+
+  std::vector<TofEventNoTime> &getEventsNoTime();
+  const std::vector<TofEventNoTime> &getEventsNoTime() const;
 
   void clear(const bool removeDetIDs = true) override;
   void clearUnused();
@@ -339,6 +351,9 @@ private:
   /// List of WeightedEvent's
   mutable std::vector<WeightedEventNoTime> weightedEventsNoTime;
 
+  /// List of WeightedEvent's
+  mutable std::vector<TofEventNoTime> eventsNoTime;
+
   /// What type of event is in our list.
   Mantid::API::EventType eventType;
 
@@ -369,6 +384,7 @@ private:
 
   void generateErrorsHistogram(const MantidVec &Y, MantidVec &E) const;
 
+  void switchToEventsNoTime();
   void switchToWeightedEvents();
   void switchToWeightedEventsNoTime();
   // should not be called externally

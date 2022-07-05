@@ -364,12 +364,12 @@ if(ENABLE_CPACK)
     # python requirements
     set(CPACK_RPM_PACKAGE_REQUIRES
         "${CPACK_RPM_PACKAGE_REQUIRES}," "boost169-python3,"
-        "python36-numpy,python36-scipy,python36-h5py,python36-PyCifRW,"
-        "python36-six,python36-PyYAML,python36-requests,python36-toml," "python36-ipython,python36-ipython-notebook"
+        "python38-numpy,python38-scipy,python38-h5py,python38-PyCifRW,"
+        "python38-six,python38-PyYAML,python38-requests,python38-toml," "python38-ipython,python38-ipython-notebook"
     )
     if(ENABLE_WORKBENCH)
-      set(CPACK_RPM_PACKAGE_REQUIRES "${CPACK_RPM_PACKAGE_REQUIRES},python36-qt5,python36-QtPy,"
-                                     "python36-matplotlib-qt5,python36-psutil,python36-ipython-gui"
+      set(CPACK_RPM_PACKAGE_REQUIRES "${CPACK_RPM_PACKAGE_REQUIRES},python38-qt5,python38-QtPy,"
+                                     "python38-matplotlib-qt5,python38-psutil,python38-ipython-gui"
       )
     endif()
 
